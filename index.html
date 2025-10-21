@@ -173,8 +173,9 @@ button {
   background:linear-gradient(135deg,#ffc107 0%,#ff9800 100%);
   color:white;
   padding:10px 20px;
-  margin-bottom:15px;
+  margin-bottom:0; /* Ajustado para alinhamento */
   font-size:0.95em;
+  width: auto;
 }
 .btn-filter.active {
   background:linear-gradient(135deg,#ff6b9d 0%,#d63447 100%);
@@ -322,12 +323,30 @@ tr:hover { background:rgba(255,255,255,0.05); }
   margin-top:10px;
   font-size:0.9em;
 }
+.filter-controls {
+    display:flex; 
+    gap:10px; 
+    margin-bottom:15px; 
+    flex-wrap:wrap; 
+    align-items:flex-end;
+}
+.filter-item {
+    min-width:150px;
+    flex: 1;
+}
+.filter-item-large {
+    flex: 2;
+    min-width: 250px;
+}
 @media(max-width:768px){
   .content{ grid-template-columns:1fr; }
   header h1 { font-size:1.8em; }
   .card-value { font-size:1.5em; }
   table { font-size:0.9em; }
   th, td { padding:10px 5px; }
+  .filter-controls > div {
+      min-width: 100%;
+  }
 }
 </style>
 </head>
@@ -422,27 +441,32 @@ tr:hover { background:rgba(255,255,255,0.05); }
 </div>
 </div>
 
-<div class="content" style="grid-template-columns: 1fr 1fr;">
-<div class="chart-section">
-<h2>📈 Gastos por Dia</h2>
-<canvas id="graficoDiario"></canvas>
-</div>
-
-<div class="chart-section">
-<h2>📉 Gastos Mensais</h2>
-<canvas id="graficoMensal"></canvas>
-</div>
-
+<div class="content" style="grid-template-columns: 1fr;">
 <div class="table-section">
 <h2>📋 Registros</h2>
 <div class="loading" id="loading">⏳ Sincronizando...</div>
-<div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
-<div style="flex:1; min-width:200px;">
-<input type="text" id="buscar" placeholder="🔍 Buscar por descrição, data ou tipo..." style="width:100%; padding:12px 15px; border:1px solid rgba(255,255,255,0.2); border-radius:10px; background:rgba(255,255,255,0.05); color:#fff;">
+    
+<div class="filter-controls">
+    <div class="filter-item-large">
+        <label for="buscar" style="margin-bottom: 5px; font-size: 0.8em; color:#4a90e2;">Buscar Texto</label>
+        <input type="text" id="buscar" placeholder="🔍 Descrição, data ou tipo..." style="width:100%; padding:12px 15px; border:1px solid rgba(255,255,255,0.2); border-radius:10px; background:rgba(255,255,255,0.05); color:#fff;">
+    </div>
+    
+    <div class="filter-item">
+        <label for="dataInicio" style="margin-bottom: 5px; font-size: 0.8em;">Início</label>
+        <input type="date" id="dataInicio" style="padding:10px 15px;">
+    </div>
+    <div class="filter-item">
+        <label for="dataFim" style="margin-bottom: 5px; font-size: 0.8em;">Fim</label>
+        <input type="date" id="dataFim" style="padding:10px 15px;">
+    </div>
+    
+    <button class="btn-filter" id="btnFiltrarData" style="min-width:120px; height: 45px; padding:10px 20px; align-self:flex-end;">Filtrar</button>
+    
+    <button class="btn-filter" id="btnFiltrarFav" style="height: 45px; padding:10px 20px; align-self:flex-end;">⭐ Apenas Favoritos</button>
+    <button class="btn-primary export-btn" onclick="exportarExcel()" style="width: auto; height: 45px; padding:10px 20px; align-self:flex-end;">📥 Exportar Excel</button>
 </div>
-<button class="btn-filter" id="btnFiltrarFav">⭐ Apenas Favoritos</button>
-<button class="btn-primary export-btn" onclick="exportarExcel()">📥 Exportar Excel</button>
-</div>
+
 <table id="tabelaFinance">
 <thead>
 <tr>
@@ -455,12 +479,25 @@ tr:hover { background:rgba(255,255,255,0.05); }
 </div>
 </div>
 
+<div class="content" style="grid-template-columns: 1fr 1fr;">
+    <div class="chart-section">
+        <h2>📈 Gastos por Dia (Últimos 7 dias)</h2>
+        <canvas id="graficoDiario"></canvas>
+    </div>
+
+    <div class="chart-section">
+        <h2>📉 Gastos Mensais (Últimos 12 meses)</h2>
+        <canvas id="graficoMensal"></canvas>
+    </div>
+</div>
+
+
 <script>
 let registros = [];
 let chart;
 let chartDiario;
 let chartMensal;
-let mostraApenasHartos = false;
+let mostraApenasFav = false; // Corrigido de "mostraApenasHartos" para um nome mais claro
 let usuarioAutenticado = false;
 
 // URL DO WEB APP CONFIGURADA
@@ -496,9 +533,18 @@ function verificarAutenticacao() {
   }
 }
 
+/**
+ * Corrige o problema do fuso horário em inputs de data, 
+ * garantindo que a data seja interpretada no fuso local.
+ * @param {string} dataInput - String de data no formato YYYY-MM-DD.
+ * @returns {string} - String de data no formato YYYY-MM-DD.
+ */
 function corrigirData(dataInput) {
-  // Corrige o problema do fuso horário
-  const data = new Date(dataInput + 'T12:00:00');
+  // O fuso horário pode causar desvios de 1 dia ao criar a data.
+  // Adicionar 'T12:00:00' garante que o objeto Date seja criado 
+  // ao meio-dia no fuso local, evitando que fusos negativos joguem 
+  // a data para o dia anterior (UTC).
+  const data = new Date(dataInput + 'T12:00:00'); 
   const ano = data.getFullYear();
   const mes = String(data.getMonth() + 1).padStart(2, '0');
   const dia = String(data.getDate()).padStart(2, '0');
@@ -527,12 +573,38 @@ function atualizarStatusSync(sincronizado) {
 function mostrarRegistros(lista){
   const tbody = document.querySelector("#tabelaFinance tbody");
   tbody.innerHTML="";
-  let totalPagar=0,totalReceber=0;
-  let gastoHoje = 0, gastoMes = 0;
+  
+  // Calcula os totais GLOBAIS para os cards de resumo (baseados em TODOS os registros)
+  let totalPagarGlobal=0,totalReceberGlobal=0;
+  let gastoHojeGlobal = 0, gastoMesGlobal = 0;
   const hoje = new Date().toISOString().split('T')[0];
   const mesAtual = new Date().getMonth();
   const anoAtual = new Date().getFullYear();
   
+  registros.forEach(r => { // Usa 'registros' (global) para os cards de resumo
+    if(r.tipo==="Pagar" && r.status==="Pendente") totalPagarGlobal+=parseFloat(r.valor);
+    if(r.tipo==="Receber" && r.status==="Pendente") totalReceberGlobal+=parseFloat(r.valor);
+    
+    // Calcular gastos de hoje (apenas `Pagar`)
+    if(r.data === hoje && r.tipo==="Pagar") {
+      gastoHojeGlobal += parseFloat(r.valor);
+    }
+    
+    // Calcular gastos do mês (apenas `Pagar`)
+    const dataParse = new Date(r.data);
+    if(dataParse.getMonth() === mesAtual && dataParse.getFullYear() === anoAtual && r.tipo==="Pagar") {
+      gastoMesGlobal += parseFloat(r.valor);
+    }
+  });
+  
+  // Atualiza os cards de resumo com os totais GLOBAIS
+  document.getElementById("totalPagar").innerText=formatarMoeda(totalPagarGlobal);
+  document.getElementById("totalReceber").innerText=formatarMoeda(totalReceberGlobal);
+  document.getElementById("totalDia").innerText=formatarMoeda(totalReceberGlobal-totalPagarGlobal);
+  document.getElementById("gastoHoje").innerText=formatarMoeda(gastoHojeGlobal);
+  document.getElementById("gastoMes").innerText=formatarMoeda(gastoMesGlobal);
+  
+  // Preenche a tabela com a lista filtrada
   lista.forEach(r=>{
     const tr=document.createElement("tr");
     const tipoBadge=r.tipo==="Pagar"?"badge-pagar":"badge-receber";
@@ -541,7 +613,7 @@ function mostrarRegistros(lista){
     
     tr.innerHTML=`
       <td><span class="${starClass}" onclick="toggleFav(${r.row})">★</span></td>
-      <td>${new Date(r.data).toLocaleDateString('pt-BR')}</td>
+      <td>${new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
       <td><span class="badge ${tipoBadge}">${r.tipo}</span></td>
       <td>${r.descricao}</td>
       <td><strong>${formatarMoeda(parseFloat(r.valor))}</strong></td>
@@ -555,33 +627,17 @@ function mostrarRegistros(lista){
       </td>
     `;
     tbody.appendChild(tr);
-    
-    if(r.tipo==="Pagar" && r.status==="Pendente") totalPagar+=parseFloat(r.valor);
-    if(r.tipo==="Receber" && r.status==="Pendente") totalReceber+=parseFloat(r.valor);
-    
-    // Calcular gastos de hoje
-    if(r.data === hoje && r.tipo==="Pagar") {
-      gastoHoje += parseFloat(r.valor);
-    }
-    
-    // Calcular gastos do mês
-    const dataParse = new Date(r.data);
-    if(dataParse.getMonth() === mesAtual && dataParse.getFullYear() === anoAtual && r.tipo==="Pagar") {
-      gastoMes += parseFloat(r.valor);
-    }
   });
   
-  document.getElementById("totalPagar").innerText=formatarMoeda(totalPagar);
-  document.getElementById("totalReceber").innerText=formatarMoeda(totalReceber);
-  document.getElementById("totalDia").innerText=formatarMoeda(totalReceber-totalPagar);
-  document.getElementById("gastoHoje").innerText=formatarMoeda(gastoHoje);
-  document.getElementById("gastoMes").innerText=formatarMoeda(gastoMes);
-  atualizarGraficos(lista);
+  atualizarGraficos(registros); // Mantém os gráficos baseados em todos os registros
 }
 
-function atualizarGraficos(filtro=registros){
-  const pagar=filtro.filter(r=>r.tipo==="Pagar" && r.status==="Pendente").reduce((sum,r)=>sum+parseFloat(r.valor),0);
-  const receber=filtro.filter(r=>r.tipo==="Receber" && r.status==="Pendente").reduce((sum,r)=>sum+parseFloat(r.valor),0);
+function atualizarGraficos(dataList){
+  // A lógica de gráficos foi mantida para usar a lista COMPLETA de registros (dataList)
+  // para ter uma visão geral consistente, independentemente dos filtros da tabela.
+  
+  const pagar=dataList.filter(r=>r.tipo==="Pagar" && r.status==="Pendente").reduce((sum,r)=>sum+parseFloat(r.valor),0);
+  const receber=dataList.filter(r=>r.tipo==="Receber" && r.status==="Pendente").reduce((sum,r)=>sum+parseFloat(r.valor),0);
   
   // Gráfico Tipo (Pizza)
   const ctx=document.getElementById('graficoTipo').getContext('2d');
@@ -605,7 +661,7 @@ function atualizarGraficos(filtro=registros){
     }
   });
   
-  // Gráfico Diário (Linha)
+  // Gráfico Diário (Linha - Últimos 7 dias)
   const gastosPorDia = {};
   const hoje = new Date();
   
@@ -616,7 +672,7 @@ function atualizarGraficos(filtro=registros){
     gastosPorDia[chave] = 0;
   }
   
-  filtro.forEach(r => {
+  dataList.forEach(r => {
     if(r.tipo==="Pagar") {
       if(gastosPorDia.hasOwnProperty(r.data)) {
         gastosPorDia[r.data] += parseFloat(r.valor);
@@ -624,7 +680,7 @@ function atualizarGraficos(filtro=registros){
     }
   });
   
-  const diasLabels = Object.keys(gastosPorDia).map(d => new Date(d).toLocaleDateString('pt-BR'));
+  const diasLabels = Object.keys(gastosPorDia).map(d => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'}));
   const diasValores = Object.values(gastosPorDia);
   
   const ctxDiario = document.getElementById('graficoDiario').getContext('2d');
@@ -658,26 +714,36 @@ function atualizarGraficos(filtro=registros){
     }
   });
   
-  // Gráfico Mensal (Coluna)
+  // Gráfico Mensal (Coluna - Últimos 12 meses)
   const gastosPorMes = {};
-  const mesAtual = new Date().getMonth();
-  const anoAtual = new Date().getFullYear();
+  const hojeMes = new Date().getMonth();
+  const hojeAno = new Date().getFullYear();
   
-  for(let m = 11; m >= 0; m--) {
-    const nomeMes = new Date(anoAtual, m, 1).toLocaleDateString('pt-BR', {month: 'short'});
+  // Inicializa os últimos 12 meses
+  for(let i = 0; i < 12; i++) {
+    const mes = (hojeMes - i + 12) % 12;
+    const ano = hojeAno - Math.floor((hojeMes - i) / 12);
+    const nomeMes = new Date(ano, mes, 1).toLocaleDateString('pt-BR', {month: 'short', year: '2-digit'});
     gastosPorMes[nomeMes] = 0;
   }
   
-  filtro.forEach(r => {
+  dataList.forEach(r => {
     if(r.tipo==="Pagar") {
       const dataParse = new Date(r.data);
-      const nomeMes = dataParse.toLocaleDateString('pt-BR', {month: 'short'});
+      const nomeMes = dataParse.toLocaleDateString('pt-BR', {month: 'short', year: '2-digit'});
       if(gastosPorMes.hasOwnProperty(nomeMes)) {
         gastosPorMes[nomeMes] += parseFloat(r.valor);
       }
     }
   });
   
+  const labelsMeses = Object.keys(gastosPorMes).sort((a,b) => {
+      // Lógica de ordenação simples baseada nos últimos 12 meses
+      const mesA = parseInt(a.match(/\d{2}/)[0]);
+      const mesB = parseInt(b.match(/\d{2}/)[0]);
+      return mesA - mesB;
+  });
+
   const ctxMensal = document.getElementById('graficoMensal').getContext('2d');
   if(chartMensal) chartMensal.destroy();
   chartMensal = new Chart(ctxMensal, {
@@ -738,7 +804,7 @@ async function carregarRegistros(){
       // Reindexar registros com números sequenciais
       registros = data.map((r, idx) => ({...r, row: idx + 1, fav: r.fav || false}));
       atualizarStatusSync(true);
-      mostrarRegistros(registros);
+      aplicarFiltros(); // Usa a função de filtro ao carregar
       console.log("✓ Carregados " + registros.length + " registros");
     }
   }catch(e){
@@ -750,7 +816,7 @@ async function carregarRegistros(){
 
 document.getElementById("financeForm").addEventListener("submit",function(e){
   e.preventDefault();
-  const data=corrigirData(document.getElementById("data").value);
+  const data=corrigirData(document.getElementById("data").value); // Usando a correção de data
   const tipo=document.getElementById("tipo").value;
   const descricao=document.getElementById("descricao").value;
   const valor=document.getElementById("valor").value;
@@ -780,37 +846,67 @@ document.getElementById("financeForm").addEventListener("submit",function(e){
   
   this.reset();
   document.getElementById("data").valueAsDate=new Date();
-  mostraApenasHartos = false;
+  mostraApenasFav = false;
   document.getElementById("btnFiltrarFav").classList.remove("active");
-  mostrarRegistros(registros);
+  aplicarFiltros(); // Atualiza a tabela após salvar
 });
 
-document.getElementById("buscar").addEventListener("input",function(){
-  const termo=this.value.toLowerCase();
-  let filtrados=registros.filter(r=>r.descricao.toLowerCase().includes(termo)||r.tipo.toLowerCase().includes(termo)||r.data.includes(termo));
-  
-  if(mostraApenasHartos) {
-    filtrados = filtrados.filter(r => r.fav);
-  }
-  
-  mostrarRegistros(filtrados);
-});
+/**
+ * Função unificada para aplicar todos os filtros (texto, data, favoritos) e atualizar a tabela.
+ */
+function aplicarFiltros() {
+    const termo = document.getElementById("buscar").value.toLowerCase();
+    const dataInicioStr = document.getElementById("dataInicio").value;
+    const dataFimStr = document.getElementById("dataFim").value;
+    
+    let filtrados = registros;
+
+    // 1. Filtragem por data
+    if (dataInicioStr && dataFimStr) {
+        // Usa a correção de data e define limites de tempo para cobrir o dia todo
+        const dataInicio = new Date(corrigirData(dataInicioStr) + 'T00:00:00');
+        const dataFim = new Date(corrigirData(dataFimStr) + 'T23:59:59'); 
+        
+        filtrados = filtrados.filter(r => {
+            // Cria um objeto Date para o registro, usando 'T12:00:00' para consistência
+            const dataRegistro = new Date(r.data + 'T12:00:00'); 
+            return dataRegistro >= dataInicio && dataRegistro <= dataFim;
+        });
+        
+        // Calcula os totais do filtro para notificar o usuário
+        const totalPagarPeriodo = filtrados.filter(r => r.tipo === "Pagar").reduce((sum, r) => sum + parseFloat(r.valor), 0);
+        const totalReceberPeriodo = filtrados.filter(r => r.tipo === "Receber").reduce((sum, r) => sum + parseFloat(r.valor), 0);
+        
+        if(filtrados.length > 0) {
+            console.log(`Resumo do Filtro por Data (${dataInicioStr} a ${dataFimStr}): Pagar: ${formatarMoeda(totalPagarPeriodo)}, Receber: ${formatarMoeda(totalReceberPeriodo)}`);
+        }
+    }
+
+    // 2. Filtragem por favoritos
+    if (mostraApenasFav) {
+        filtrados = filtrados.filter(r => r.fav);
+    }
+
+    // 3. Filtragem por texto
+    if (termo) {
+        filtrados = filtrados.filter(r => 
+            r.descricao.toLowerCase().includes(termo) || 
+            r.tipo.toLowerCase().includes(termo) || 
+            r.data.includes(termo)
+        );
+    }
+    
+    mostrarRegistros(filtrados);
+}
+
+// Event Listeners atualizados
+document.getElementById("buscar").addEventListener("input", aplicarFiltros);
+document.getElementById("btnFiltrarData").addEventListener("click", aplicarFiltros);
 
 document.getElementById("btnFiltrarFav").addEventListener("click", function(){
-  mostraApenasHartos = !mostraApenasHartos;
+  mostraApenasFav = !mostraApenasFav;
   this.classList.toggle("active");
-  
-  let filtrados = registros;
-  if(mostraApenasHartos) {
-    filtrados = registros.filter(r => r.fav);
-  }
-  
-  const termo = document.getElementById("buscar").value.toLowerCase();
-  if(termo) {
-    filtrados = filtrados.filter(r=>r.descricao.toLowerCase().includes(termo)||r.tipo.toLowerCase().includes(termo)||r.data.includes(termo));
-  }
-  
-  mostrarRegistros(filtrados);
+  aplicarFiltros();
 });
 
 function mudarStatus(row) {
@@ -826,16 +922,37 @@ function mudarStatus(row) {
   
   registro.status = novoStatus;
   enviarParaPlanilha({...registro, action:'update'});
-  mostrarRegistros(registros);
+  aplicarFiltros(); // Atualiza a tabela e re-aplica filtros
 }
 
 function exportarExcel(){
   let listaExportar = registros;
-  if(mostraApenasHartos) {
+  if(mostraApenasFav) {
     listaExportar = registros.filter(r => r.fav);
   }
-  
-  const ws_data=listaExportar.map(r=>[r.fav?"★":"",new Date(r.data).toLocaleDateString('pt-BR'),r.tipo,r.descricao,r.valor,r.status,r.campo1||'',r.campo2||'',r.campo3||'']);
+  // Aplica filtro de data e texto na exportação se houver um filtro ativo na tela
+  const termo = document.getElementById("buscar").value.toLowerCase();
+  const dataInicioStr = document.getElementById("dataInicio").value;
+  const dataFimStr = document.getElementById("dataFim").value;
+
+  if (termo || (dataInicioStr && dataFimStr)) {
+      listaExportar = listaExportar.filter(r => {
+          // Filtro por texto
+          const textoMatch = !termo || r.descricao.toLowerCase().includes(termo) || r.tipo.toLowerCase().includes(termo) || r.data.includes(termo);
+
+          // Filtro por data
+          let dataMatch = true;
+          if (dataInicioStr && dataFimStr) {
+              const dataInicio = new Date(corrigirData(dataInicioStr) + 'T00:00:00');
+              const dataFim = new Date(corrigirData(dataFimStr) + 'T23:59:59'); 
+              const dataRegistro = new Date(r.data + 'T12:00:00'); 
+              dataMatch = dataRegistro >= dataInicio && dataRegistro <= dataFim;
+          }
+          return textoMatch && dataMatch;
+      });
+  }
+
+  const ws_data=listaExportar.map(r=>[r.fav?"★":"",new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR'),r.tipo,r.descricao,r.valor,r.status,r.campo1||'',r.campo2||'',r.campo3||'']);
   ws_data.unshift(["Fav","Data","Tipo","Descrição","Valor","Status","Campo1","Campo2","Campo3"]);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(ws_data);
@@ -866,9 +983,9 @@ function excluir(row){
     const idx = registros.findIndex(r=>r.row===row);
     enviarParaPlanilha({...r,action:'delete'});
     registros.splice(idx,1);
-    mostraApenasHartos = false;
+    mostraApenasFav = false;
     document.getElementById("btnFiltrarFav").classList.remove("active");
-    mostrarRegistros(registros);
+    aplicarFiltros();
   }
 }
 
@@ -876,13 +993,7 @@ function toggleFav(row){
   const idx = registros.findIndex(r=>r.row===row);
   registros[idx].fav=!registros[idx].fav;
   enviarParaPlanilha({...registros[idx],action:'update'});
-  
-  let listaExibicao = registros;
-  if(mostraApenasHartos) {
-    listaExibicao = registros.filter(r => r.fav);
-  }
-  
-  mostrarRegistros(listaExibicao);
+  aplicarFiltros();
 }
 
 document.getElementById("data").valueAsDate=new Date();
