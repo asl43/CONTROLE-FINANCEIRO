@@ -27,6 +27,38 @@ header h1 {
   justify-content:center;
   gap:15px;
 }
+.sync-status {
+  background:rgba(38,222,129,0.2);
+  border:1px solid rgba(38,222,129,0.5);
+  color:#26de81;
+  padding:10px 15px;
+  border-radius:10px;
+  font-size:0.9em;
+  margin-bottom:20px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:fit-content;
+  margin-left:auto;
+  margin-right:auto;
+}
+.sync-status.offline {
+  background:rgba(255,107,157,0.2);
+  border-color:rgba(255,107,157,0.5);
+  color:#ff6b9d;
+}
+.sync-status .dot {
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#26de81;
+  animation:pulse 2s infinite;
+}
+.sync-status.offline .dot {
+  background:#ff6b9d;
+  animation:none;
+}
+@keyframes pulse { 0%, 100% { opacity:1; } 50% { opacity:0.5; } }
 .cards-summary { 
   display:grid; 
   grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); 
@@ -218,6 +250,78 @@ tr:hover { background:rgba(255,255,255,0.05); }
   color:#ffc107;
   transform:scale(1.2);
 }
+.loading {
+  display:none;
+  text-align:center;
+  padding:20px;
+  color:#4a90e2;
+  font-weight:600;
+}
+.loading.show {
+  display:block;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform:rotate(0deg); }
+  100% { transform:rotate(360deg); }
+}
+.login-overlay {
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  background:rgba(0,0,0,0.95);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+.login-box {
+  background:linear-gradient(135deg,#2a2a3e 0%,#1f1f2e 100%);
+  border-radius:20px;
+  padding:40px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  border:1px solid rgba(255,255,255,0.1);
+  max-width:400px;
+  width:90%;
+  text-align:center;
+}
+.login-box h2 {
+  color:#fff;
+  margin-bottom:30px;
+  font-size:2em;
+}
+.login-box input {
+  width:100%;
+  padding:15px;
+  margin-bottom:20px;
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:10px;
+  background:rgba(255,255,255,0.05);
+  color:#fff;
+  font-size:1.1em;
+}
+.login-box button {
+  width:100%;
+  padding:15px;
+  background:linear-gradient(135deg,#4a90e2 0%,#357abd 100%);
+  color:white;
+  border:none;
+  border-radius:10px;
+  font-size:1.1em;
+  font-weight:600;
+  cursor:pointer;
+}
+.login-box button:hover {
+  transform:translateY(-2px);
+  box-shadow:0 8px 25px rgba(74,144,226,0.4);
+}
+.erro-senha {
+  color:#ff6b9d;
+  margin-top:10px;
+  font-size:0.9em;
+}
 @media(max-width:768px){
   .content{ grid-template-columns:1fr; }
   header h1 { font-size:1.8em; }
@@ -229,15 +333,31 @@ tr:hover { background:rgba(255,255,255,0.05); }
 </head>
 <body>
 
-<div class="container">
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>🔐 Acesso Restrito</h2>
+    <p style="color:#b0b0b0; margin-bottom:20px;">Digite a senha para acessar o sistema</p>
+    <input type="password" id="senhaInput" placeholder="Digite sua senha" onkeypress="if(event.key==='Enter') fazerLogin()">
+    <button onclick="fazerLogin()">🔓 Entrar</button>
+    <div class="erro-senha" id="erroSenha"></div>
+  </div>
+</div>
+
+<div class="container" id="mainContainer" style="display:none;">
 <header>
 <h1>💰 Controle Financeiro</h1>
+<div class="sync-status" id="syncStatus">
+  <div class="dot"></div>
+  <span id="syncText">Sincronizado</span>
+</div>
 </header>
 
 <div class="cards-summary">
 <div class="card card-pagar"><div class="card-label">Total a Pagar</div><div class="card-value" id="totalPagar">R$ 0,00</div></div>
 <div class="card card-receber"><div class="card-label">Total a Receber</div><div class="card-value" id="totalReceber">R$ 0,00</div></div>
 <div class="card card-saldo"><div class="card-label">Saldo do Dia</div><div class="card-value" id="totalDia">R$ 0,00</div></div>
+<div class="card card-pagar"><div class="card-label">Gasto Hoje</div><div class="card-value" id="gastoHoje">R$ 0,00</div></div>
+<div class="card card-pagar"><div class="card-label">Gasto este Mês</div><div class="card-value" id="gastoMes">R$ 0,00</div></div>
 </div>
 
 <div class="content">
@@ -245,6 +365,7 @@ tr:hover { background:rgba(255,255,255,0.05); }
 <h2>📝 Novo Registro</h2>
 <form id="financeForm">
 <input type="hidden" id="row">
+<input type="hidden" id="sheetRowId">
 
 <div class="form-group">
 <label for="data">Data</label>
@@ -274,6 +395,7 @@ tr:hover { background:rgba(255,255,255,0.05); }
 <select id="status" required>
 <option value="Pendente">Pendente</option>
 <option value="Pago">Pago</option>
+<option value="Recebido">Recebido</option>
 </select>
 </div>
 
@@ -300,8 +422,20 @@ tr:hover { background:rgba(255,255,255,0.05); }
 </div>
 </div>
 
+<div class="content" style="grid-template-columns: 1fr 1fr;">
+<div class="chart-section">
+<h2>📈 Gastos por Dia</h2>
+<canvas id="graficoDiario"></canvas>
+</div>
+
+<div class="chart-section">
+<h2>📉 Gastos Mensais</h2>
+<canvas id="graficoMensal"></canvas>
+</div>
+
 <div class="table-section">
 <h2>📋 Registros</h2>
+<div class="loading" id="loading">⏳ Sincronizando...</div>
 <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
 <div style="flex:1; min-width:200px;">
 <input type="text" id="buscar" placeholder="🔍 Buscar por descrição, data ou tipo..." style="width:100%; padding:12px 15px; border:1px solid rgba(255,255,255,0.2); border-radius:10px; background:rgba(255,255,255,0.05); color:#fff;">
@@ -324,21 +458,85 @@ tr:hover { background:rgba(255,255,255,0.05); }
 <script>
 let registros = [];
 let chart;
+let chartDiario;
+let chartMensal;
 let mostraApenasHartos = false;
+let usuarioAutenticado = false;
 
-const WEB_APP1 = "https://script.google.com/macros/s/AKfycby8RMoklQLNtr6Ffg9_ubqo8cH2in9hJgpP5zezr5CyzrULaRF74k4mnWzd11lmx-P2/exec";
+// URL DO WEB APP CONFIGURADA
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxCkEbskP0tA-4Ii_9v1wS7z2_9yHP0nn-_GroK_Z4paEiurRMz6Iole6902c00FR-Q/exec";
+
+// CONFIGURE SUA SENHA AQUI (troque por uma senha forte!)
+const SENHA_ACESSO = "minhasenha123";
 
 const formatarMoeda = valor => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(valor);
+
+function fazerLogin() {
+  const senha = document.getElementById("senhaInput").value;
+  const erroDiv = document.getElementById("erroSenha");
+  
+  if(senha === SENHA_ACESSO) {
+    usuarioAutenticado = true;
+    sessionStorage.setItem("autenticado", "true");
+    document.getElementById("loginOverlay").style.display = "none";
+    document.getElementById("mainContainer").style.display = "block";
+    carregarRegistros();
+    erroDiv.innerText = "";
+  } else {
+    erroDiv.innerText = "❌ Senha incorreta! Tente novamente.";
+    document.getElementById("senhaInput").value = "";
+  }
+}
+
+function verificarAutenticacao() {
+  if(sessionStorage.getItem("autenticado") === "true") {
+    usuarioAutenticado = true;
+    document.getElementById("loginOverlay").style.display = "none";
+    document.getElementById("mainContainer").style.display = "block";
+  }
+}
+
+function corrigirData(dataInput) {
+  // Corrige o problema do fuso horário
+  const data = new Date(dataInput + 'T12:00:00');
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+function mostrarLoading(show) {
+  const loading = document.getElementById("loading");
+  if(show) loading.classList.add("show");
+  else loading.classList.remove("show");
+}
+
+function atualizarStatusSync(sincronizado) {
+  const status = document.getElementById("syncStatus");
+  const text = document.getElementById("syncText");
+  
+  if(sincronizado) {
+    status.classList.remove("offline");
+    text.innerText = "✓ Sincronizado";
+  } else {
+    status.classList.add("offline");
+    text.innerText = "⚠ Offline - Dados locais";
+  }
+}
 
 function mostrarRegistros(lista){
   const tbody = document.querySelector("#tabelaFinance tbody");
   tbody.innerHTML="";
   let totalPagar=0,totalReceber=0;
+  let gastoHoje = 0, gastoMes = 0;
+  const hoje = new Date().toISOString().split('T')[0];
+  const mesAtual = new Date().getMonth();
+  const anoAtual = new Date().getFullYear();
   
   lista.forEach(r=>{
     const tr=document.createElement("tr");
     const tipoBadge=r.tipo==="Pagar"?"badge-pagar":"badge-receber";
-    const statusBadge=r.status==="Pendente"?"badge-pendente":"badge-pago";
+    const statusBadge=r.status==="Pendente"?"badge-pendente":(r.status==="Pago"||r.status==="Recebido")?"badge-pago":"badge-pendente";
     const starClass = r.fav ? "star" : "star-empty";
     
     tr.innerHTML=`
@@ -347,7 +545,7 @@ function mostrarRegistros(lista){
       <td><span class="badge ${tipoBadge}">${r.tipo}</span></td>
       <td>${r.descricao}</td>
       <td><strong>${formatarMoeda(parseFloat(r.valor))}</strong></td>
-      <td><span class="badge ${statusBadge}">${r.status}</span></td>
+      <td><span class="badge ${statusBadge}" onclick="mudarStatus(${r.row})" style="cursor:pointer;">${r.status}</span></td>
       <td>${r.campo1||'-'} ${r.campo2||''} ${r.campo3||''}</td>
       <td>
         <div class="actions">
@@ -358,25 +556,40 @@ function mostrarRegistros(lista){
     `;
     tbody.appendChild(tr);
     
-    if(r.tipo==="Pagar") totalPagar+=parseFloat(r.valor);
-    if(r.tipo==="Receber") totalReceber+=parseFloat(r.valor);
+    if(r.tipo==="Pagar" && r.status==="Pendente") totalPagar+=parseFloat(r.valor);
+    if(r.tipo==="Receber" && r.status==="Pendente") totalReceber+=parseFloat(r.valor);
+    
+    // Calcular gastos de hoje
+    if(r.data === hoje && r.tipo==="Pagar") {
+      gastoHoje += parseFloat(r.valor);
+    }
+    
+    // Calcular gastos do mês
+    const dataParse = new Date(r.data);
+    if(dataParse.getMonth() === mesAtual && dataParse.getFullYear() === anoAtual && r.tipo==="Pagar") {
+      gastoMes += parseFloat(r.valor);
+    }
   });
   
   document.getElementById("totalPagar").innerText=formatarMoeda(totalPagar);
   document.getElementById("totalReceber").innerText=formatarMoeda(totalReceber);
   document.getElementById("totalDia").innerText=formatarMoeda(totalReceber-totalPagar);
-  atualizarGrafico(lista);
+  document.getElementById("gastoHoje").innerText=formatarMoeda(gastoHoje);
+  document.getElementById("gastoMes").innerText=formatarMoeda(gastoMes);
+  atualizarGraficos(lista);
 }
 
-function atualizarGrafico(filtro=registros){
-  const pagar=filtro.filter(r=>r.tipo==="Pagar").reduce((sum,r)=>sum+parseFloat(r.valor),0);
-  const receber=filtro.filter(r=>r.tipo==="Receber").reduce((sum,r)=>sum+parseFloat(r.valor),0);
+function atualizarGraficos(filtro=registros){
+  const pagar=filtro.filter(r=>r.tipo==="Pagar" && r.status==="Pendente").reduce((sum,r)=>sum+parseFloat(r.valor),0);
+  const receber=filtro.filter(r=>r.tipo==="Receber" && r.status==="Pendente").reduce((sum,r)=>sum+parseFloat(r.valor),0);
+  
+  // Gráfico Tipo (Pizza)
   const ctx=document.getElementById('graficoTipo').getContext('2d');
   if(chart) chart.destroy();
   chart=new Chart(ctx,{
     type:'doughnut',
     data:{
-      labels:['Pagar','Receber'],
+      labels:['A Pagar','A Receber'],
       datasets:[{
         data:[pagar,receber],
         backgroundColor:['#ff6b9d','#26de81'],
@@ -391,39 +604,153 @@ function atualizarGrafico(filtro=registros){
       }
     }
   });
+  
+  // Gráfico Diário (Linha)
+  const gastosPorDia = {};
+  const hoje = new Date();
+  
+  for(let i = 6; i >= 0; i--) {
+    const data = new Date(hoje);
+    data.setDate(data.getDate() - i);
+    const chave = data.toISOString().split('T')[0];
+    gastosPorDia[chave] = 0;
+  }
+  
+  filtro.forEach(r => {
+    if(r.tipo==="Pagar") {
+      if(gastosPorDia.hasOwnProperty(r.data)) {
+        gastosPorDia[r.data] += parseFloat(r.valor);
+      }
+    }
+  });
+  
+  const diasLabels = Object.keys(gastosPorDia).map(d => new Date(d).toLocaleDateString('pt-BR'));
+  const diasValores = Object.values(gastosPorDia);
+  
+  const ctxDiario = document.getElementById('graficoDiario').getContext('2d');
+  if(chartDiario) chartDiario.destroy();
+  chartDiario = new Chart(ctxDiario, {
+    type: 'line',
+    data: {
+      labels: diasLabels,
+      datasets: [{
+        label: 'Gastos Diários',
+        data: diasValores,
+        borderColor: '#ff6b9d',
+        backgroundColor: 'rgba(255, 107, 157, 0.1)',
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: '#ff6b9d',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {labels: {color: '#e0e0e0', font: {size: 12, weight: 'bold'}}}
+      },
+      scales: {
+        y: {beginAtZero: true, ticks: {color: '#b0b0b0'}, grid: {color: 'rgba(255,255,255,0.1)'}},
+        x: {ticks: {color: '#b0b0b0'}, grid: {color: 'rgba(255,255,255,0.1)'}}
+      }
+    }
+  });
+  
+  // Gráfico Mensal (Coluna)
+  const gastosPorMes = {};
+  const mesAtual = new Date().getMonth();
+  const anoAtual = new Date().getFullYear();
+  
+  for(let m = 11; m >= 0; m--) {
+    const nomeMes = new Date(anoAtual, m, 1).toLocaleDateString('pt-BR', {month: 'short'});
+    gastosPorMes[nomeMes] = 0;
+  }
+  
+  filtro.forEach(r => {
+    if(r.tipo==="Pagar") {
+      const dataParse = new Date(r.data);
+      const nomeMes = dataParse.toLocaleDateString('pt-BR', {month: 'short'});
+      if(gastosPorMes.hasOwnProperty(nomeMes)) {
+        gastosPorMes[nomeMes] += parseFloat(r.valor);
+      }
+    }
+  });
+  
+  const ctxMensal = document.getElementById('graficoMensal').getContext('2d');
+  if(chartMensal) chartMensal.destroy();
+  chartMensal = new Chart(ctxMensal, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(gastosPorMes),
+      datasets: [{
+        label: 'Gastos Mensais',
+        data: Object.values(gastosPorMes),
+        backgroundColor: '#4a90e2',
+        borderColor: '#357abd',
+        borderWidth: 2,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {labels: {color: '#e0e0e0', font: {size: 12, weight: 'bold'}}}
+      },
+      scales: {
+        y: {beginAtZero: true, ticks: {color: '#b0b0b0'}, grid: {color: 'rgba(255,255,255,0.1)'}},
+        x: {ticks: {color: '#b0b0b0'}, grid: {color: 'rgba(255,255,255,0.1)'}}
+      }
+    }
+  });
 }
 
-async function enviarWebApp(dados){
+async function enviarParaPlanilha(dados){
+  mostrarLoading(true);
   try{
-    await fetch(WEB_APP1,{method:'POST',body:JSON.stringify(dados)});
-  }catch(e){console.error("Erro ao enviar WebApp:",e);}
+    const resp = await fetch(WEB_APP_URL,{
+      method:'POST',
+      body:JSON.stringify(dados)
+    });
+    const result = await resp.json();
+    atualizarStatusSync(true);
+    mostrarLoading(false);
+    return result;
+  }catch(e){
+    console.error("Erro ao sincronizar:",e);
+    atualizarStatusSync(false);
+    mostrarLoading(false);
+    alert("⚠️ Erro ao sincronizar. Verifique sua conexão e a URL do Web App.");
+  }
 }
 
 async function carregarRegistros(){
+  mostrarLoading(true);
   try{
-    const resp1=await fetch(WEB_APP1,{method:'POST',body:JSON.stringify({action:'get'})});
-    const data1=await resp1.json();
-    
-    // Remove duplicatas usando um Set
-    const registrosUnicos = [];
-    const vistosSet = new Set();
-    
-    data1.forEach((r, i) => {
-      const chave = `${r.data}-${r.tipo}-${r.descricao}-${r.valor}`;
-      if (!vistosSet.has(chave)) {
-        vistosSet.add(chave);
-        registrosUnicos.push({...r, row: registrosUnicos.length + 1, fav: r.fav || false});
-      }
+    const resp = await fetch(WEB_APP_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'get'})
     });
+    const data = await resp.json();
     
-    registros = registrosUnicos;
-    mostrarRegistros(registros);
-  }catch(e){console.error("Erro ao carregar:",e);}
+    if(Array.isArray(data)) {
+      // Reindexar registros com números sequenciais
+      registros = data.map((r, idx) => ({...r, row: idx + 1, fav: r.fav || false}));
+      atualizarStatusSync(true);
+      mostrarRegistros(registros);
+      console.log("✓ Carregados " + registros.length + " registros");
+    }
+  }catch(e){
+    console.error("Erro ao carregar:",e);
+    atualizarStatusSync(false);
+  }
+  mostrarLoading(false);
 }
 
 document.getElementById("financeForm").addEventListener("submit",function(e){
   e.preventDefault();
-  const data=document.getElementById("data").value;
+  const data=corrigirData(document.getElementById("data").value);
   const tipo=document.getElementById("tipo").value;
   const descricao=document.getElementById("descricao").value;
   const valor=document.getElementById("valor").value;
@@ -435,15 +762,20 @@ document.getElementById("financeForm").addEventListener("submit",function(e){
   if(!data||!tipo||!descricao||!valor||!status){alert("Preencha todos os campos!"); return;}
   
   const row=document.getElementById("row").value;
+  const sheetRowId=document.getElementById("sheetRowId").value;
+  
   if(row){
-    const idx = registros.findIndex(r=>r.row==row);
-    registros[idx]={...registros[idx],data,tipo,descricao,valor,status,campo1,campo2,campo3};
-    enviarWebApp({...registros[idx],action:'edit'});
+    const idx = registros.findIndex(r=>r.id == sheetRowId);
+    if(idx !== -1) {
+      registros[idx]={...registros[idx],data,tipo,descricao,valor,status,campo1,campo2,campo3};
+      enviarParaPlanilha({...registros[idx],action:'update'});
+    }
     document.getElementById("row").value="";
+    document.getElementById("sheetRowId").value="";
   }else{
-    const novoRegistro={data,tipo,descricao,valor,status,campo1,campo2,campo3,fav:false,row:registros.length+1};
+    const novoRegistro={data,tipo,descricao,valor,status,campo1,campo2,campo3,fav:false};
     registros.push(novoRegistro);
-    enviarWebApp({...novoRegistro,action:'add'});
+    enviarParaPlanilha({...novoRegistro,action:'add'});
   }
   
   this.reset();
@@ -481,13 +813,29 @@ document.getElementById("btnFiltrarFav").addEventListener("click", function(){
   mostrarRegistros(filtrados);
 });
 
+function mudarStatus(row) {
+  const registro = registros.find(r => r.row === row);
+  if(!registro) return;
+  
+  let novoStatus = registro.status;
+  if(registro.status === "Pendente") {
+    novoStatus = registro.tipo === "Pagar" ? "Pago" : "Recebido";
+  } else {
+    novoStatus = "Pendente";
+  }
+  
+  registro.status = novoStatus;
+  enviarParaPlanilha({...registro, action:'update'});
+  mostrarRegistros(registros);
+}
+
 function exportarExcel(){
   let listaExportar = registros;
   if(mostraApenasHartos) {
     listaExportar = registros.filter(r => r.fav);
   }
   
-  const ws_data=listaExportar.map(r=>[r.fav?"★":"",new Date(r.data).toLocaleDateString('pt-BR'),r.tipo,r.descricao,r.valor,r.status,r.campo1,r.campo2,r.campo3]);
+  const ws_data=listaExportar.map(r=>[r.fav?"★":"",new Date(r.data).toLocaleDateString('pt-BR'),r.tipo,r.descricao,r.valor,r.status,r.campo1||'',r.campo2||'',r.campo3||'']);
   ws_data.unshift(["Fav","Data","Tipo","Descrição","Valor","Status","Campo1","Campo2","Campo3"]);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(ws_data);
@@ -499,22 +847,24 @@ function editar(row){
   const r=registros.find(r=>r.row===row);
   if(r){
     document.getElementById("row").value=r.row;
+    document.getElementById("sheetRowId").value=r.id;
     document.getElementById("data").value=r.data;
     document.getElementById("tipo").value=r.tipo;
     document.getElementById("descricao").value=r.descricao;
     document.getElementById("valor").value=r.valor;
     document.getElementById("status").value=r.status;
-    document.getElementById("campo1").value=r.campo1;
-    document.getElementById("campo2").value=r.campo2;
-    document.getElementById("campo3").value=r.campo3;
+    document.getElementById("campo1").value=r.campo1||'';
+    document.getElementById("campo2").value=r.campo2||'';
+    document.getElementById("campo3").value=r.campo3||'';
     window.scrollTo({top:0,behavior:'smooth'});
   }
 }
 
 function excluir(row){
   if(confirm("Deseja excluir este registro?")){
+    const r = registros.find(r=>r.row===row);
     const idx = registros.findIndex(r=>r.row===row);
-    enviarWebApp({...registros[idx],action:'delete'});
+    enviarParaPlanilha({...r,action:'delete'});
     registros.splice(idx,1);
     mostraApenasHartos = false;
     document.getElementById("btnFiltrarFav").classList.remove("active");
@@ -525,7 +875,7 @@ function excluir(row){
 function toggleFav(row){
   const idx = registros.findIndex(r=>r.row===row);
   registros[idx].fav=!registros[idx].fav;
-  enviarWebApp({...registros[idx],action:'edit'});
+  enviarParaPlanilha({...registros[idx],action:'update'});
   
   let listaExibicao = registros;
   if(mostraApenasHartos) {
@@ -536,7 +886,15 @@ function toggleFav(row){
 }
 
 document.getElementById("data").valueAsDate=new Date();
-carregarRegistros();
+verificarAutenticacao();
+
+// Sincronizar a cada 10 segundos (apenas se autenticado)
+setInterval(() => {
+  if(usuarioAutenticado) {
+    carregarRegistros();
+    console.log("↻ Sincronizando...");
+  }
+}, 10000);
 </script>
 
 </body>
