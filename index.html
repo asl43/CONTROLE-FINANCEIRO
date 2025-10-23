@@ -338,6 +338,17 @@ tr:hover { background:var(--table-row-hover-dark); }
 .summary-value-pagar { color: var(--pagar-color); font-weight: 700; }
 .summary-value-receber { color: var(--receber-color); font-weight: 700; }
 .summary-value-saldo { color: var(--primary-color); font-weight: 700; }
+.star-empty, .star {
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.star-empty {
+    color: #b0b0b0;
+}
+.star {
+    color: #ffc107; /* Amarelo */
+}
 
 @media(max-width:768px){
   .content{ grid-template-columns:1fr; }
@@ -456,15 +467,37 @@ tr:hover { background:var(--table-row-hover-dark); }
     </div>
     
     <div class="filter-item">
-        <label for="dataInicio" style="margin-bottom: 5px; font-size: 0.8em;">Início</label>
+        <label for="filtroPeriodo" style="margin-bottom: 5px; font-size: 0.8em;">Período Dinâmico</label>
+        <select id="filtroPeriodo" style="padding:10px 15px;">
+            <option value="all">Todos os Registros</option>
+            <option value="1" selected>Dia Atual</option>
+            <option value="2-30">Últimos 30 Dias (Excluindo o Dia Atual)</option>
+            <option value="45">Últimos 45 Dias</option>
+            <option value="60">Últimos 60 Dias</option>
+            <option value="75">Últimos 75 Dias</option>
+            <option value="90">Últimos 90 Dias</option>
+            <option value="120">Últimos 120 Dias</option>
+            <option value="150">Últimos 150 Dias</option>
+            <option value="180">Últimos 180 Dias</option>
+            <option value="customDays">Outra Quantidade de Dias</option>
+        </select>
+    </div>
+
+    <div class="filter-item" id="customDaysInput" style="display:none;">
+        <label for="diasCustomizados" style="margin-bottom: 5px; font-size: 0.8em;">Quantos Dias Retroativos?</label>
+        <input type="number" id="diasCustomizados" placeholder="Ex: 250" style="padding:10px 15px; min-width: 150px;">
+    </div>
+
+    <div class="filter-item">
+        <label for="dataInicio" style="margin-bottom: 5px; font-size: 0.8em;">Início (Customizado)</label>
         <input type="date" id="dataInicio" style="padding:10px 15px;">
     </div>
     <div class="filter-item">
-        <label for="dataFim" style="margin-bottom: 5px; font-size: 0.8em;">Fim</label>
+        <label for="dataFim" style="margin-bottom: 5px; font-size: 0.8em;">Fim (Customizado)</label>
         <input type="date" id="dataFim" style="padding:10px 15px;">
     </div>
     
-    <button class="btn-filter" id="btnFiltrarData" style="min-width:120px; height: 45px; padding:10px 20px; align-self:flex-end;">Filtrar</button>
+    <button class="btn-filter" id="btnFiltrarData" style="min-width:120px; height: 45px; padding:10px 20px; align-self:flex-end;">Filtrar Customizado</button>
     
     <button class="btn-filter" id="btnFiltrarFav" style="height: 45px; padding:10px 20px; align-self:flex-end;">⭐ Apenas Favoritos</button>
     <button class="btn-primary export-btn" onclick="exportarExcel()" style="width: auto; height: 45px; padding:10px 20px; align-self:flex-end;">📥 Exportar Excel</button>
@@ -601,6 +634,7 @@ function atualizarCardsGlobais(dataList) {
     const anoAtual = new Date().getFullYear();
 
     dataList.forEach(r => {
+        // Totais a Pagar/Receber Pendentes (Globais, não mudam com o filtro da tabela)
         if(r.tipo==="Pagar" && r.status==="Pendente") totalPagarGlobal+=parseFloat(r.valor);
         if(r.tipo==="Receber" && r.status==="Pendente") totalReceberGlobal+=parseFloat(r.valor);
         
@@ -640,7 +674,7 @@ function mostrarRegistros(lista){
     
     // Usando a correção de data para exibição
     tr.innerHTML=`
-      <td><span class="${starClass}" onclick="toggleFav(${r.row})">★</span></td>
+      <td><span class="${starClass}" onclick="toggleFav(${r.row})" style="cursor:pointer;">★</span></td>
       <td>${new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
       <td><span class="badge ${tipoBadge}">${r.tipo}</span></td>
       <td>${r.descricao}</td>
@@ -872,13 +906,31 @@ document.getElementById("financeForm").addEventListener("submit",function(e){
   aplicarFiltros(); 
 });
 
+document.getElementById("filtroPeriodo").addEventListener("change", function() {
+    const customDaysInput = document.getElementById("customDaysInput");
+    // Mostra o campo de dias customizados apenas se a opção 'Outra Quantidade de Dias' for selecionada
+    if (this.value === 'customDays') {
+        customDaysInput.style.display = 'block';
+    } else {
+        customDaysInput.style.display = 'none';
+        // Reseta o input customizado ao trocar para outra opção
+        document.getElementById("diasCustomizados").value = '';
+    }
+    aplicarFiltros();
+});
+
+document.getElementById("diasCustomizados").addEventListener("input", aplicarFiltros);
+
+
 /**
- * Função unificada para aplicar todos os filtros (texto, data, favoritos) e atualizar a tabela.
+ * Função unificada para aplicar todos os filtros (texto, data, favoritos, período) e atualizar a tabela.
  */
 function aplicarFiltros() {
     const termo = document.getElementById("buscar").value.toLowerCase();
-    const dataInicioStr = document.getElementById("dataInicio").value;
-    const dataFimStr = document.getElementById("dataFim").value;
+    const periodoSelecionado = document.getElementById("filtroPeriodo").value; 
+    let dataInicioStr = document.getElementById("dataInicio").value;
+    let dataFimStr = document.getElementById("dataFim").value;
+    const diasCustomizados = document.getElementById("diasCustomizados").value;
     const summaryDiv = document.getElementById("periodSummary");
     
     let filtrados = registros;
@@ -886,15 +938,72 @@ function aplicarFiltros() {
     let totalReceberPeriodo = 0;
     let dataFiltroAtivo = false;
 
-    // 1. Filtragem por data
-    if (dataInicioStr && dataFimStr) {
-        dataFiltroAtivo = true;
-        const dataInicio = new Date(corrigirData(dataInicioStr) + 'T00:00:00');
-        const dataFim = new Date(corrigirData(dataFimStr) + 'T23:59:59'); 
+    // Lógica para o novo filtro de período dinâmico
+    let dataInicioFiltro, dataFimFiltro;
+
+    if (periodoSelecionado !== 'all') {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0); // Zera o horário para comparação (Início do Dia)
+        dataFimFiltro = new Date();
+        dataFimFiltro.setHours(23, 59, 59, 999); // Final do Dia de Hoje
+
+        if (periodoSelecionado === '1') {
+            // Filtro: Dia Atual (Hoje)
+            dataInicioFiltro = hoje;
+        } else if (periodoSelecionado === '2-30') {
+            // Filtro: Últimos 30 Dias, excluindo o Dia Atual
+            const inicio = new Date(hoje);
+            inicio.setDate(hoje.getDate() - 30);
+            dataInicioFiltro = inicio; 
+            
+            const ontem = new Date(hoje);
+            ontem.setDate(hoje.getDate() - 1); // Dia anterior
+            dataFimFiltro = new Date(ontem.toISOString().split('T')[0] + 'T23:59:59'); // Final do dia anterior
+
+        } else if (periodoSelecionado === 'customDays' && diasCustomizados) {
+            // Filtro: Quantidade de Dias Customizada
+            const dias = parseInt(diasCustomizados);
+            if (!isNaN(dias) && dias > 0) {
+                dataInicioFiltro = new Date(hoje);
+                // Subtrai dias - 1, pois o dia de hoje já é o primeiro
+                dataInicioFiltro.setDate(hoje.getDate() - (dias - 1));
+            } else {
+                // Se o valor for inválido, não aplica o filtro de data
+                dataFiltroAtivo = false;
+            }
+        }
+        else {
+            // Filtros de períodos fixos (45, 60, 90, etc.)
+            const dias = parseInt(periodoSelecionado);
+            if (!isNaN(dias) && dias > 0) {
+                dataInicioFiltro = new Date(hoje);
+                // Subtrai dias - 1, pois o dia de hoje já é o primeiro
+                dataInicioFiltro.setDate(hoje.getDate() - (dias - 1)); 
+            }
+        }
         
+        // A dataFiltroAtivo só é setada como true se um período válido for escolhido
+        if (dataInicioFiltro && dataFimFiltro) {
+            dataFiltroAtivo = true; 
+        }
+        
+        dataInicioStr = ''; // Limpa as customizadas para usar o dinâmico
+        dataFimStr = '';
+    }
+    
+    // Sobrescreve com o filtro de data customizada se preenchido
+    if (dataInicioStr && dataFimStr) {
+        dataInicioFiltro = new Date(corrigirData(dataInicioStr) + 'T00:00:00');
+        dataFimFiltro = new Date(corrigirData(dataFimStr) + 'T23:59:59'); 
+        dataFiltroAtivo = true; // Indica que há um filtro de data ativo (customizado)
+    }
+
+    // 1. Filtragem por data (se houver filtro de período ou customizado)
+    if (dataFiltroAtivo) {
         filtrados = filtrados.filter(r => {
+            // Cria uma data de registro no meio do dia para evitar problemas de fuso horário
             const dataRegistro = new Date(r.data + 'T12:00:00'); 
-            return dataRegistro >= dataInicio && dataRegistro <= dataFim;
+            return dataRegistro >= dataInicioFiltro && dataRegistro <= dataFimFiltro;
         });
     }
 
@@ -958,17 +1067,64 @@ function mudarStatus(row) {
 function exportarExcel(){
   // A exportação usa a mesma lógica de filtro da função aplicarFiltros
   const termo = document.getElementById("buscar").value.toLowerCase();
-  const dataInicioStr = document.getElementById("dataInicio").value;
-  const dataFimStr = document.getElementById("dataFim").value;
+  const periodoSelecionado = document.getElementById("filtroPeriodo").value; 
+  let dataInicioStr = document.getElementById("dataInicio").value;
+  let dataFimStr = document.getElementById("dataFim").value;
+  const diasCustomizados = document.getElementById("diasCustomizados").value;
   
   let listaExportar = registros;
+  let dataFiltroAtivo = false;
+  let dataInicioFiltro, dataFimFiltro;
 
+  // Lógica para o filtro de período dinâmico na exportação
+  if (periodoSelecionado !== 'all') {
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0); 
+      dataFimFiltro = new Date();
+      dataFimFiltro.setHours(23, 59, 59, 999);
+
+        if (periodoSelecionado === '1') {
+            dataInicioFiltro = hoje;
+        } else if (periodoSelecionado === '2-30') {
+            const inicio = new Date(hoje);
+            inicio.setDate(hoje.getDate() - 30);
+            dataInicioFiltro = inicio; 
+            
+            const ontem = new Date(hoje);
+            ontem.setDate(hoje.getDate() - 1); 
+            dataFimFiltro = new Date(ontem.toISOString().split('T')[0] + 'T23:59:59'); 
+        } else if (periodoSelecionado === 'customDays' && diasCustomizados) {
+            const dias = parseInt(diasCustomizados);
+            if (!isNaN(dias) && dias > 0) {
+                dataInicioFiltro = new Date(hoje);
+                dataInicioFiltro.setDate(hoje.getDate() - (dias - 1));
+            } else {
+                dataFiltroAtivo = false;
+            }
+        } else {
+            const dias = parseInt(periodoSelecionado);
+            if (!isNaN(dias) && dias > 0) {
+                dataInicioFiltro = new Date(hoje);
+                dataInicioFiltro.setDate(hoje.getDate() - (dias - 1)); 
+            }
+        }
+        
+        if (dataInicioFiltro && dataFimFiltro) {
+            dataFiltroAtivo = true;
+        }
+  }
+  
+  // Sobrescreve com o filtro de data customizada se preenchido
   if (dataInicioStr && dataFimStr) {
-      const dataInicio = new Date(corrigirData(dataInicioStr) + 'T00:00:00');
-      const dataFim = new Date(corrigirData(dataFimStr) + 'T23:59:59'); 
+      dataInicioFiltro = new Date(corrigirData(dataInicioStr) + 'T00:00:00');
+      dataFimFiltro = new Date(corrigirData(dataFimStr) + 'T23:59:59'); 
+      dataFiltroAtivo = true;
+  }
+  
+  if (dataFiltroAtivo) {
       listaExportar = listaExportar.filter(r => {
           const dataRegistro = new Date(r.data + 'T12:00:00'); 
-          return dataRegistro >= dataInicio && dataRegistro <= dataFim;
+          return dataRegistro >= dataInicioFiltro && dataRegistro <= dataFimFiltro;
       });
   }
 
