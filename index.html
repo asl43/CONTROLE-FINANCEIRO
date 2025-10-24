@@ -33,6 +33,7 @@
     --warning-color: #ffc107;
     --sobra-color: #2ecc71; /* Cor para sobra/economia */
     --falta-color: #e74c3c; /* Cor para falta/dívida */
+    --fab-color: #3498db; /* Cor para FAB */
 }
 
 /* TEMA CLARO */
@@ -86,6 +87,67 @@ header h1 {
     z-index: 1000;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
+
+/* Estilos para o FAB (Floating Action Button) - Sugestão 25 */
+.fab-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 900;
+}
+.fab-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--fab-color);
+    color: white;
+    font-size: 2em;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease, background 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.fab-btn:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+.quick-menu {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(10px);
+}
+.quick-menu.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+.quick-menu button {
+    width: 150px;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-size: 0.9em;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.quick-menu .btn-pagar {
+    background: var(--pagar-color);
+    color: white;
+}
+.quick-menu .btn-receber {
+    background: var(--receber-color);
+    color: white;
+}
+
 
 /* Estilos para tela de login */
 .login-overlay {
@@ -351,6 +413,13 @@ button {
   font-size:0.9em;
   padding:8px 16px;
 }
+/* Novo botão para Pagamento Parcial */
+.btn-partial {
+    background: linear-gradient(135deg, var(--warning-color) 0%, #e67e22 100%);
+    color: white; 
+    font-size: 0.85em;
+    padding: 8px 10px;
+}
 .btn-filter {
   background:linear-gradient(135deg,#ffc107 0%,#ff9800 100%);
   color:white;
@@ -484,6 +553,7 @@ tr:hover { background:var(--table-row-hover-dark); }
 .actions { 
   display:flex; 
   gap:8px;
+  flex-wrap: wrap; /* Permite quebrar em telas pequenas */
 }
 .filter-controls {
     display:flex; 
@@ -644,6 +714,9 @@ tr:hover { background:var(--table-row-hover-dark); }
       padding: 6px 12px;
   }
   .cards-summary { grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); }
+  .actions button { /* Ajuste para botões de ação na tabela em mobile */
+        margin-bottom: 5px;
+    }
 }
 </style>
 </head>
@@ -813,15 +886,20 @@ tr:hover { background:var(--table-row-hover-dark); }
         <canvas id="graficoComparativoMensal"></canvas>
     </div>
 
-    <div class="chart-section">
-        <h2>🎯 Objetivos de Economia (Sugestão 9/10 - Placeholder)</h2>
-        <p style="color: #b0b0b0;">
-            Cálculo de economia: R$ 0,00/mês para atingir R$ 10.000 em 12 meses.
-            <br><br>
-            Planejamento Orçamentário Anual: <span style="color: var(--receber-color);">Previsto</span> vs <span style="color: var(--pagar-color);">Realizado</span>.
-            <br><br>
-            <button class="btn-primary" onclick="alert('Funcionalidade de Planejamento em desenvolvimento!')" style="width: auto;">Planejar Orçamento</button>
-        </p>
+    <div class="chart-section card-meta" onclick="editarMeta('objetivo')" style="cursor: pointer;">
+        <div class="edit-hint">✏️ Clique para editar</div>
+        <h2>🎯 Objetivo de Economia/Investimento</h2>
+        <div id="objetivoCardContent">
+            <p style="color: var(--receber-color); font-weight: 600;">
+                Meta: <span id="objetivoValorDisplay">R$ 0,00</span> em <span id="objetivoMesesDisplay">0</span> meses.
+            </p>
+            <p style="font-size: 1.5em; margin: 15px 0;">
+                Poupar/Investir: <span id="valorMensalPoupar" class="summary-value-receber">R$ 0,00/mês</span>
+            </p>
+            <div style="font-size: 0.85em; color: #b0b0b0;">
+                (Baseado na sua meta de <span id="objetivoMesesAux">0</span> meses.)
+            </div>
+        </div>
     </div>
 </div>
 
@@ -980,8 +1058,16 @@ tr:hover { background:var(--table-row-hover-dark); }
     </div>
 </div>
 
-
 </div>
+
+<div class="fab-container" id="fabContainer">
+    <div class="quick-menu" id="quickMenu">
+        <button class="btn-receber" onclick="focarFormulario('Receber')">💵 + Receber</button>
+        <button class="btn-pagar" onclick="focarFormulario('Pagar')">💸 + Pagar</button>
+    </div>
+    <button class="fab-btn" onclick="toggleQuickMenu()">+</button>
+</div>
+
 
 <script>
 let registros = [];
@@ -1051,6 +1137,7 @@ function fazerLogin() {
     sessionStorage.setItem("autenticado", "true");
     document.getElementById("loginOverlay").style.display = "none";
     document.getElementById("mainContainer").style.display = "block";
+    document.getElementById("fabContainer").style.display = "block";
     carregarRegistros();
     erroDiv.innerText = "";
   } else {
@@ -1064,6 +1151,9 @@ function verificarAutenticacao() {
     usuarioAutenticado = true;
     document.getElementById("loginOverlay").style.display = "none";
     document.getElementById("mainContainer").style.display = "block";
+    document.getElementById("fabContainer").style.display = "block";
+  } else {
+    document.getElementById("fabContainer").style.display = "none";
   }
 }
 
@@ -1120,6 +1210,7 @@ function atualizarCardsGlobais(dataList) {
             dadosMensais[mesAno] = { entrada: 0, saida: 0, saldo: 0 };
         }
 
+        // Soma apenas os valores de status "Pendente" para os cards "Total a Pagar" e "Total a Receber"
         if(r.tipo==="Pagar") {
             if(r.status==="Pendente") totalPagarGlobal += valor;
             dadosMensais[mesAno].saida += valor;
@@ -1128,11 +1219,13 @@ function atualizarCardsGlobais(dataList) {
             dadosMensais[mesAno].entrada += valor;
         }
         
-        if(r.data === hojeStr && r.tipo==="Pagar") {
+        // Contas Pagas (ou Recebidas) no dia de hoje
+        if(r.data === hojeStr && r.tipo==="Pagar" && r.status === "Pago") {
             gastoHojeGlobal += valor;
         }
         
-        if(dataRegistro.getMonth() === mesAtual && dataRegistro.getFullYear() === anoAtual && r.tipo==="Pagar") {
+        // Gasto total (Pago) no mês
+        if(dataRegistro.getMonth() === mesAtual && dataRegistro.getFullYear() === anoAtual && r.tipo==="Pagar" && r.status === "Pago") {
             gastoMesGlobal += valor;
         }
         
@@ -1146,10 +1239,56 @@ function atualizarCardsGlobais(dataList) {
         }
     });
 
-    // Calcular Saldo/Falta do Mês Atual
+    // Calcular Saldo/Falta do Mês Atual (Com base em Pago/Recebido - Realizado)
     const mesAnoAtual = anoAtual + '-' + String(mesAtual + 1).padStart(2, '0');
-    const saldoMesAtual = dadosMensais[mesAnoAtual] ? (dadosMensais[mesAnoAtual].entrada - dadosMensais[mesAnoAtual].saida) : 0;
-    
+    let entradaRealizadaMes = dataList.filter(r => 
+        r.tipo === "Receber" && 
+        (r.status === "Recebido" || r.status === "Pago") && // Recebido/Pago
+        new Date(r.data + 'T12:00:00').getMonth() === mesAtual && 
+        new Date(r.data + 'T12:00:00').getFullYear() === anoAtual
+    ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
+
+    let saidaRealizadaMes = dataList.filter(r => 
+        r.tipo === "Pagar" && 
+        (r.status === "Pago" || r.status === "Recebido") && // Pago/Recebido
+        new Date(r.data + 'T12:00:00').getMonth() === mesAtual && 
+        new Date(r.data + 'T12:00:00').getFullYear() === anoAtual
+    ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
+
+    const saldoMesAtual = entradaRealizadaMes - saidaRealizadaMes;
+
+    // Calcular Média dos Últimos 3 Meses (Realizado)
+    let saldoTotal3M = 0;
+    let mesesContados = 0;
+    for(let i = 1; i <= 3; i++) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const mesAnterior = d.getMonth();
+        const anoAnterior = d.getFullYear();
+
+        const entradaAnt = dataList.filter(r => 
+            r.tipo === "Receber" && 
+            (r.status === "Recebido" || r.status === "Pago") &&
+            new Date(r.data + 'T12:00:00').getMonth() === mesAnterior && 
+            new Date(r.data + 'T12:00:00').getFullYear() === anoAnterior
+        ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
+
+        const saidaAnt = dataList.filter(r => 
+            r.tipo === "Pagar" && 
+            (r.status === "Pago" || r.status === "Recebido") &&
+            new Date(r.data + 'T12:00:00').getMonth() === mesAnterior && 
+            new Date(r.data + 'T12:00:00').getFullYear() === anoAnterior
+        ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
+
+        if (entradaAnt > 0 || saidaAnt > 0) {
+            saldoTotal3M += (entradaAnt - saidaAnt);
+            mesesContados++;
+        }
+    }
+    const media3Meses = mesesContados > 0 ? saldoTotal3M / mesesContados : 0;
+    document.getElementById("media3Meses").innerText = formatarMoeda(media3Meses);
+
+
     document.getElementById("sobraFaltaMes").innerText = formatarMoeda(saldoMesAtual);
     const cardSobra = document.getElementById("cardSobraMes");
     cardSobra.classList.remove('card-sobra', 'card-falta');
@@ -1158,16 +1297,6 @@ function atualizarCardsGlobais(dataList) {
     } else {
         cardSobra.classList.add('card-falta');
     }
-    
-    // Calcular Média dos Últimos 3 Meses
-    const mesesPassados = Object.keys(dadosMensais).sort().slice(-3, -1);
-    let saldoTotal3M = 0;
-    mesesPassados.forEach(mesAno => {
-        saldoTotal3M += (dadosMensais[mesAno].entrada - dadosMensais[mesAno].saida);
-    });
-    const media3Meses = mesesPassados.length > 0 ? saldoTotal3M / mesesPassados.length : 0;
-    document.getElementById("media3Meses").innerText = formatarMoeda(media3Meses);
-
 
     document.getElementById("totalPagar").innerText=formatarMoeda(totalPagarGlobal);
     document.getElementById("totalReceber").innerText=formatarMoeda(totalReceberGlobal);
@@ -1177,6 +1306,7 @@ function atualizarCardsGlobais(dataList) {
     document.getElementById("vencemSeteDias").innerText=formatarMoeda(vencemSeteDias);
     
     atualizarCardMeta(gastoHojeGlobal, gastoMesGlobal);
+    atualizarCardObjetivo(); // Novo
     atualizarContadoresFiltros(dataList);
     atualizarCategoryMetas(dataList); // Sugestão 8
     renderizarCalendario(dataList); // Sugestão 12
@@ -1198,7 +1328,20 @@ function mostrarRegistros(lista){
     // Sugestão 4 e 5: Adicionar Recorrência e Parcela na descrição ou em Campos
     let camposAdicionais = `${r.campo2||'-'} ${r.campo3||''}`;
     if (r.recorrente === 'Sim') camposAdicionais += ' [RECORR.]';
-    if (r.parcelaTotal) camposAdicionais += ` [${r.parcelaAtual}/${r.parcelaTotal}]`;
+    if (r.parcelaTotal && r.parcelaTotal > 1) camposAdicionais += ` [${r.parcelaAtual}/${r.parcelaTotal}]`;
+
+    // Lógica para Pagamento Parcial (Mostra o valor original e o pago)
+    let valorDisplay = formatarMoeda(parseFloat(r.valor));
+    let acoesHtml = `<button class="btn-edit" onclick="editar(${r.row})">Editar</button><button class="btn-danger" onclick="excluir(${r.row})">Excluir</button>`;
+    
+    if (r.valorOriginal && parseFloat(r.valorOriginal) > parseFloat(r.valor)) {
+        valorDisplay = `<span style="text-decoration:line-through; color:var(--pagar-color);">${formatarMoeda(parseFloat(r.valorOriginal))}</span> ${formatarMoeda(parseFloat(r.valor))}`;
+    }
+    
+    // Adicionar botão de Pagamento Parcial apenas se for Pagar e Pendente
+    if (r.tipo === 'Pagar' && r.status === 'Pendente') {
+         acoesHtml = `<button class="btn-partial" onclick="pagamentoParcial(${r.row})">Parcial</button> ` + acoesHtml;
+    }
 
     tr.innerHTML=`
       <td><span class="${starClass}" onclick="toggleFav(${r.row})" style="cursor:pointer;">★</span></td>
@@ -1206,14 +1349,13 @@ function mostrarRegistros(lista){
       <td><span class="badge ${tipoBadge}">${r.tipo}</span></td>
       <td>${r.descricao}</td>
       <td>${r.categoria || '-'}</td>
-      <td><strong>${formatarMoeda(parseFloat(r.valor))}</strong></td>
+      <td><strong>${valorDisplay}</strong></td>
       <td>${r.conta || 'N/A'}</td>
       <td><span class="badge ${statusBadge}" onclick="mudarStatus(${r.row})" style="cursor:pointer;">${r.status}</span></td>
       <td>${camposAdicionais}</td>
       <td>
         <div class="actions">
-          <button class="btn-edit" onclick="editar(${r.row})">Editar</button>
-          <button class="btn-danger" onclick="excluir(${r.row})">Excluir</button>
+          ${acoesHtml}
         </div>
       </td>
     `;
@@ -1226,17 +1368,20 @@ function mostrarRegistros(lista){
 function atualizarGraficos(dataList){
   const fontColor = currentTheme === 'light' ? '#333333' : '#e0e0e0';
   const gridColor = currentTheme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+  // FILTROS ATUALIZADOS: Gráficos de Gastos devem usar o status "Pago" (Realizado)
+  const gastosRealizados = dataList.filter(r => r.tipo === "Pagar" && r.status === "Pago");
   const pagamentosPendentes = dataList.filter(r => r.tipo === "Pagar" && r.status === "Pendente");
-  const entradas = dataList.filter(r => r.tipo === "Receber");
-  const saidas = dataList.filter(r => r.tipo === "Pagar");
+  const entradasRealizadas = dataList.filter(r => r.tipo === "Receber" && r.status === "Recebido");
+  const saidasRealizadas = dataList.filter(r => r.tipo === "Pagar" && r.status === "Pago");
 
-  // Gráfico 1: Gastos por Categoria (Pizza) - Sugestão 1
-  const gastosPorCategoria = pagamentosPendentes.reduce((acc, r) => {
+
+  // Gráfico 1: Gastos por Categoria (Pizza) - Apenas Pendentes para Lembrar
+  const gastosPendentesPorCategoria = pagamentosPendentes.reduce((acc, r) => {
     acc[r.categoria] = (acc[r.categoria] || 0) + parseFloat(r.valor);
     return acc;
   }, {});
-  const categoriasLabels = Object.keys(gastosPorCategoria);
-  const categoriasValores = Object.values(gastosPorCategoria);
+  const categoriasLabels = Object.keys(gastosPendentesPorCategoria);
+  const categoriasValores = Object.values(gastosPendentesPorCategoria);
   
   const ctx=document.getElementById('graficoTipo').getContext('2d');
   if(chart) chart.destroy();
@@ -1260,13 +1405,13 @@ function atualizarGraficos(dataList){
     }
   });
 
-  // Gráfico 2: Fluxo de Caixa (Linha ao longo do tempo) - Sugestão 1
+  // Gráfico 2: Fluxo de Caixa (Linha ao longo do tempo - Realizado)
   const dadosFluxo = {};
   const dataInicioFluxo = new Date();
   dataInicioFluxo.setMonth(dataInicioFluxo.getMonth() - 5); // Últimos 6 meses
   dataInicioFluxo.setDate(1);
 
-  entradas.concat(saidas).forEach(r => {
+  entradasRealizadas.concat(saidasRealizadas).forEach(r => {
     const dataRegistro = new Date(r.data + 'T12:00:00');
     if (dataRegistro >= dataInicioFluxo) {
         const mesAno = dataRegistro.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
@@ -1280,7 +1425,16 @@ function atualizarGraficos(dataList){
   const mesesFluxo = Object.keys(dadosFluxo).sort((a, b) => {
     const [mesA, anoA] = a.split('/');
     const [mesB, anoB] = b.split('/');
-    return new Date(`01-${mesA}-${anoA}`) - new Date(`01-${mesB}-${anoB}`);
+    // Tenta parsear como data
+    let dateA, dateB;
+    try {
+        dateA = new Date(`01 ${mesA} 20${anoA}`);
+        dateB = new Date(`01 ${mesB} 20${anoB}`);
+    } catch (e) {
+        // Fallback for sorting if date parsing fails (e.g. invalid short month name)
+        return a.localeCompare(b);
+    }
+    return dateA - dateB;
   });
   
   const ctxFluxoCaixa = document.getElementById('graficoFluxoCaixa').getContext('2d');
@@ -1291,13 +1445,13 @@ function atualizarGraficos(dataList){
       labels: mesesFluxo,
       datasets: [
         {
-          label: 'Entradas',
+          label: 'Entradas (Recebido)',
           data: mesesFluxo.map(m => dadosFluxo[m].entrada),
           backgroundColor: '#26de81',
           stack: 'stack1'
         },
         {
-          label: 'Saídas',
+          label: 'Saídas (Pago)',
           data: mesesFluxo.map(m => -dadosFluxo[m].saida), // Valores negativos para despesas
           backgroundColor: '#ff6b9d',
           stack: 'stack1'
@@ -1317,13 +1471,13 @@ function atualizarGraficos(dataList){
     }
   });
 
-  // Gráfico 3: Comparativo Mensal (Mês Atual vs Mês Anterior) - Sugestão 1
+  // Gráfico 3: Comparativo Mensal (Mês Atual vs Mês Anterior - Realizado)
   const hoje = new Date();
   const mesAtualNome = hoje.toLocaleDateString('pt-BR', { month: 'long' });
   const mesAnterior = new Date(hoje.setMonth(hoje.getMonth() - 1));
   const mesAnteriorNome = mesAnterior.toLocaleDateString('pt-BR', { month: 'long' });
   
-  const categoriaLabelsComp = ["Receitas", "Despesas"];
+  const categoriaLabelsComp = ["Receitas (Realizado)", "Despesas (Realizado)"];
   let receitaAtual = 0, despesaAtual = 0;
   let receitaAnterior = 0, despesaAnterior = 0;
   
@@ -1331,14 +1485,16 @@ function atualizarGraficos(dataList){
     const dataRegistro = new Date(r.data + 'T12:00:00');
     const valor = parseFloat(r.valor);
     
+    // Filtro para o Mês Atual (realizado)
     if (dataRegistro.getMonth() === new Date().getMonth() && dataRegistro.getFullYear() === new Date().getFullYear()) {
-      if (r.tipo === "Receber") receitaAtual += valor;
-      else if (r.tipo === "Pagar") despesaAtual += valor;
+      if (r.tipo === "Receber" && r.status === "Recebido") receitaAtual += valor;
+      else if (r.tipo === "Pagar" && r.status === "Pago") despesaAtual += valor;
     }
     
+    // Filtro para o Mês Anterior (realizado)
     if (dataRegistro.getMonth() === mesAnterior.getMonth() && dataRegistro.getFullYear() === mesAnterior.getFullYear()) {
-      if (r.tipo === "Receber") receitaAnterior += valor;
-      else if (r.tipo === "Pagar") despesaAnterior += valor;
+      if (r.tipo === "Receber" && r.status === "Recebido") receitaAnterior += valor;
+      else if (r.tipo === "Pagar" && r.status === "Pago") despesaAnterior += valor;
     }
   });
 
@@ -1365,7 +1521,7 @@ function atualizarGraficos(dataList){
       responsive: true,
       plugins: {
         legend: {position: 'bottom', labels: {color: fontColor, font: {size: 12, weight: 'bold'}}},
-        title: {display: true, text: 'Comparativo Receitas/Despesas', color: fontColor}
+        title: {display: true, text: 'Comparativo Receitas/Despesas (Realizado)', color: fontColor}
       },
       scales: {
         x: {ticks: {color: fontColor}, grid: {color: gridColor}},
@@ -1375,7 +1531,7 @@ function atualizarGraficos(dataList){
   });
 
 
-  // Gráfico 4: Gastos Diários (Linha)
+  // Gráfico 4: Gastos Diários (Linha - Realizado)
   const gastosPorDia = {};
   const hojeDia = new Date();
   
@@ -1386,7 +1542,7 @@ function atualizarGraficos(dataList){
     gastosPorDia[chave] = 0;
   }
   
-  saidas.forEach(r => {
+  gastosRealizados.forEach(r => {
     if(gastosPorDia.hasOwnProperty(r.data)) {
       gastosPorDia[r.data] += parseFloat(r.valor);
     }
@@ -1402,7 +1558,7 @@ function atualizarGraficos(dataList){
     data: {
       labels: diasLabels,
       datasets: [{
-        label: 'Gastos Diários',
+        label: 'Gastos Diários (Realizado)',
         data: diasValores,
         borderColor: '#ff6b9d',
         backgroundColor: 'rgba(255, 107, 157, 0.1)',
@@ -1426,7 +1582,7 @@ function atualizarGraficos(dataList){
     }
   });
   
-  // Gráfico 5: Gastos Mensais por Categoria (Barra Empilhada)
+  // Gráfico 5: Gastos Mensais por Categoria (Barra Empilhada - Realizado)
   const gastosPorMesECategoria = {};
   const categorias = ["Alimentação", "Moradia/Aluguel", "Transporte", "Lazer", "Saúde", "Educação", "Outros"];
   const mesesLabels = [];
@@ -1435,16 +1591,19 @@ function atualizarGraficos(dataList){
   const hojeAno = new Date().getFullYear();
   
   for(let i = 0; i < 12; i++) {
-    const mes = (hojeMes - i + 12) % 12;
-    const ano = hojeAno - Math.floor((hojeMes - i) / 12);
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const mes = d.getMonth();
+    const ano = d.getFullYear();
+
     const nomeMes = new Date(ano, mes, 1).toLocaleDateString('pt-BR', {month: 'short', year: '2-digit'});
     mesesLabels.push(nomeMes);
     gastosPorMesECategoria[nomeMes] = {};
     categorias.forEach(cat => gastosPorMesECategoria[nomeMes][cat] = 0);
   }
-  mesesLabels.reverse();
+  mesesLabels.reverse(); // Garante a ordem cronológica correta
 
-  saidas.forEach(r => {
+  gastosRealizados.forEach(r => {
     if(categorias.includes(r.categoria)) {
       const dataParse = new Date(r.data + 'T12:00:00');
       const nomeMes = dataParse.toLocaleDateString('pt-BR', {month: 'short', year: '2-digit'});
@@ -1477,7 +1636,7 @@ function atualizarGraficos(dataList){
       responsive: true,
       plugins: {
         legend: {labels: {color: fontColor, font: {size: 12, weight: 'bold'}}},
-        title: {display: true, text: 'Total Gasto por Categoria/Mês', color: fontColor}
+        title: {display: true, text: 'Total Gasto por Categoria/Mês (Realizado)', color: fontColor}
       },
       scales: {
         x: {stacked: true, ticks: {color: fontColor}, grid: {color: gridColor}},
@@ -1541,16 +1700,18 @@ async function carregarRegistros(){
     const data = await resp.json();
     
     if(Array.isArray(data)) {
+      // Usando 'r.categoria' como campo principal, 'r.campo1' como fallback para compatibilidade com o backend
       registros = data.map((r, idx) => ({
           ...r, 
           row: idx + 1, 
           fav: r.fav || false,
-          categoria: r.campo1 || r.categoria || 'Outros',
-          campo1: r.campo1 || r.categoria || 'Outros',
+          categoria: r.categoria || r.campo1 || 'Outros',
+          // campo1: r.categoria || r.campo1 || 'Outros', // Mantido para compatibilidade de envio, mas usar 'categoria' na lógica
           conta: r.conta || 'Conta Corrente', // Adiciona conta
           recorrente: r.recorrente || 'Nao', // Adiciona recorrente
-          parcelaAtual: r.parcelaAtual || 1, // Adiciona parcelas
-          parcelaTotal: r.parcelaTotal || 1
+          parcelaAtual: parseInt(r.parcelaAtual) || 1, // Adiciona parcelas
+          parcelaTotal: parseInt(r.parcelaTotal) || 1,
+          valorOriginal: r.valorOriginal ? parseFloat(r.valorOriginal) : null // Novo para Parcial
       }));
       atualizarStatusSync(true);
       aplicarFiltros(); 
@@ -1604,13 +1765,16 @@ document.getElementById("financeForm").addEventListener("submit",function(e){
   if(row) { // Edição de registro
     const idx = registros.findIndex(r=>r.id == sheetRowId);
     if(idx !== -1) {
+      const registroExistente = registros[idx];
       const dadosRegistro = {
         data: corrigirData(document.getElementById("data").value), tipo, descricao, valor, status, 
-        campo1:categoria, categoria, campo2, campo3, conta, recorrente,
-        parcelaAtual: registros[idx].parcelaAtual, parcelaTotal: registros[idx].parcelaTotal
+        categoria, campo2, campo3, conta, recorrente,
+        parcelaAtual: registroExistente.parcelaAtual, parcelaTotal: registroExistente.parcelaTotal,
+        // Mantém valorOriginal se já existe, senão seta para null
+        valorOriginal: registroExistente.valorOriginal || (registroExistente.valor !== valor ? registroExistente.valor : null) 
       };
-      registros[idx]={...registros[idx],...dadosRegistro, row:parseInt(row)};
-      enviarParaPlanilha({...registros[idx], action:'update'});
+      registros[idx]={...registroExistente,...dadosRegistro, row:parseInt(row)};
+      enviarParaPlanilha({...registros[idx], action:'update', campo1: categoria}); // Envia categoria como campo1 para backend
     }
     document.getElementById("row").value="";
     document.getElementById("sheetRowId").value="";
@@ -1625,39 +1789,39 @@ document.getElementById("financeForm").addEventListener("submit",function(e){
             const novoRegistro = {
                 data: corrigirData(dataParcela.toISOString().split('T')[0]), 
                 tipo, descricao: `${descricao} (${i}/${parcelas})`, 
-                valor: valor, status, campo1: categoria, categoria, campo2, campo3, conta, 
-                recorrente: 'Nao', // Parcelamento não é recorrente (é uma série finita)
+                valor: valor, status, categoria, campo2, campo3, conta, 
+                recorrente: 'Nao', 
                 parcelaAtual: i, 
                 parcelaTotal: parcelas,
                 row: registros.length + i, 
                 fav: false
             };
             registros.push(novoRegistro);
-            enviarParaPlanilha({...novoRegistro, action:'add'});
+            enviarParaPlanilha({...novoRegistro, action:'add', campo1: categoria});
         }
     } 
-    // Sugestão 5: Recorrência (cria apenas o primeiro, a automação faria os próximos no backend)
+    // Sugestão 5: Recorrência
     else if (recorrente === 'Sim') {
         const novoRegistro = {
             data: corrigirData(document.getElementById("data").value), tipo, descricao, valor, status, 
-            campo1: categoria, categoria, campo2, campo3, conta, recorrente,
+            categoria, campo2, campo3, conta, recorrente,
             parcelaAtual: 1, parcelaTotal: 1,
             row: registros.length + 1, fav: false
         };
         registros.push(novoRegistro);
-        enviarParaPlanilha({...novoRegistro, action:'add'});
+        enviarParaPlanilha({...novoRegistro, action:'add', campo1: categoria});
         alert(`✅ Recorrente salvo! A rotina de automação criará os próximos lançamentos.`);
     }
     // Registro Simples
     else {
         const novoRegistro = {
             data: corrigirData(document.getElementById("data").value), tipo, descricao, valor, status, 
-            campo1: categoria, categoria, campo2, campo3, conta, recorrente: 'Nao',
+            categoria, campo2, campo3, conta, recorrente: 'Nao',
             parcelaAtual: 1, parcelaTotal: 1,
             row: registros.length + 1, fav: false
         };
         registros.push(novoRegistro);
-        enviarParaPlanilha({...novoRegistro, action:'add'});
+        enviarParaPlanilha({...novoRegistro, action:'add', campo1: categoria});
     }
     
   }
@@ -1709,8 +1873,6 @@ function aplicarFiltros() {
         hoje.setHours(0, 0, 0, 0); 
         dataFimFiltro = new Date();
         dataFimFiltro.setHours(23, 59, 59, 999); 
-
-        // ... (Lógica de filtro de data, mantida a original para brevidade) ...
 
         if (periodoSelecionado === '1') {
             dataInicioFiltro = hoje;
@@ -1812,7 +1974,7 @@ document.getElementById("buscar").addEventListener("input", aplicarFiltros);
 document.getElementById("btnFiltrarData").addEventListener("click", aplicarFiltros);
 
 document.getElementById("btnFiltrarFav").addEventListener("click", function(){
-  mostraApenasFav = !mostraApenasFav;
+  mostraApenasFav = !mostraAenasFav;
   this.classList.toggle("active");
   aplicarFiltros();
 });
@@ -1827,6 +1989,7 @@ function carregarFiltroSalvo(filtro) {
         mostraApenasFav = false;
         document.getElementById("btnFiltrarFav").classList.remove("active");
     } 
+    document.getElementById('filtroSalvo').value = ''; // Reset do select salvo
     aplicarFiltros();
 }
 
@@ -1908,9 +2071,18 @@ function atualizarCardMeta(gastoHoje, gastoMes) {
     }
 }
 
+// Novo: Sugestão 10 - Atualizar Card de Objetivo de Economia
+function atualizarCardObjetivo() {
+    const valorMensalNecessario = objetivoMeses > 0 ? objetivoEconomia / objetivoMeses : 0;
+    document.getElementById("objetivoValorDisplay").innerText = formatarMoeda(objetivoEconomia);
+    document.getElementById("objetivoMesesDisplay").innerText = objetivoMeses;
+    document.getElementById("objetivoMesesAux").innerText = objetivoMeses;
+    document.getElementById("valorMensalPoupar").innerText = formatarMoeda(valorMensalNecessario) + "/mês";
+}
+
+
 function editarMeta(type) {
     if (type === 'global') {
-        // ... (Lógica de edição de meta global, mantida a original para brevidade) ...
         const tipoAtual = metaTipo === 'diario' ? 'Diário' : 'Mensal';
         const novoTipo = prompt(`Tipo de Meta Atual: ${tipoAtual}\n\nDigite:\n1 - Para Meta Diária\n2 - Para Meta Mensal`, metaTipo === 'diario' ? '1' : '2');
         
@@ -1943,8 +2115,8 @@ function editarMeta(type) {
                 registros.forEach(r => {
                     const dataRegistro = new Date(r.data + 'T12:00:00');
                     const valor = parseFloat(r.valor);
-                    if(r.data === hojeStr && r.tipo === "Pagar") gastoHoje += valor;
-                    if(dataRegistro.getMonth() === mesAtual && dataRegistro.getFullYear() === anoAtual && r.tipo === "Pagar") gastoMes += valor;
+                    if(r.data === hojeStr && r.tipo === "Pagar" && r.status === "Pago") gastoHoje += valor;
+                    if(dataRegistro.getMonth() === mesAtual && dataRegistro.getFullYear() === anoAtual && r.tipo === "Pagar" && r.status === "Pago") gastoMes += valor;
                 });
                 
                 atualizarCardMeta(gastoHoje, gastoMes);
@@ -1953,6 +2125,40 @@ function editarMeta(type) {
                 alert('❌ Valor inválido! Digite um número positivo.');
             }
         }
+    } else if (type === 'objetivo') { // Novo: Edição de Meta de Poupança/Investimento
+        const novoObjetivo = prompt(`Objetivo de Economia/Investimento:\n\nValor Atual: R$ ${objetivoEconomia.toFixed(2)}\n\nDigite o valor total do objetivo (ex: 10000):`, objetivoEconomia);
+        
+        if (novoObjetivo !== null) {
+            const valorParseado = parseFloat(novoObjetivo.replace(',', '.'));
+            if (!isNaN(valorParseado) && valorParseado > 0) {
+                objetivoEconomia = valorParseado;
+                localStorage.setItem('objetivoEconomia', objetivoEconomia);
+            } else {
+                alert('❌ Valor do Objetivo inválido! Digite um número positivo.');
+                return;
+            }
+        } else {
+            return;
+        }
+        
+        const novosMeses = prompt(`Prazo (em meses) para o Objetivo:\n\nPrazo Atual: ${objetivoMeses} meses\n\nDigite o novo prazo (ex: 12):`, objetivoMeses);
+        
+        if (novosMeses !== null) {
+            const mesesParseado = parseInt(novosMeses);
+            if (!isNaN(mesesParseado) && mesesParseado > 0) {
+                objetivoMeses = mesesParseado;
+                localStorage.setItem('objetivoMeses', objetivoMeses);
+            } else {
+                alert('❌ Prazo inválido! Digite um número inteiro positivo.');
+                return;
+            }
+        } else {
+            return;
+        }
+
+        atualizarCardObjetivo();
+        alert(`✅ Objetivo atualizado: ${formatarMoeda(objetivoEconomia)} em ${objetivoMeses} meses.`);
+
     } else {
         // Sugestão 8: Edição de Metas por Categoria
         const cat = prompt(`Digite a categoria para definir/editar a meta (ex: Alimentação):`);
@@ -1985,7 +2191,8 @@ function atualizarCategoryMetas(dataList) {
     const summaryDiv = document.getElementById("categoryMetasSummary");
     summaryDiv.innerHTML = '';
     
-    const gastosMesPorCategoria = dataList.filter(r => r.tipo === "Pagar")
+    // Gasto Realizado do Mês (status 'Pago')
+    const gastosMesPorCategoria = dataList.filter(r => r.tipo === "Pagar" && r.status === "Pago")
         .reduce((acc, r) => {
             const dataRegistro = new Date(r.data + 'T12:00:00');
             const mesAtual = new Date().getMonth();
@@ -2000,7 +2207,7 @@ function atualizarCategoryMetas(dataList) {
     const categoriasComMeta = Object.keys(metasPorCategoria).sort();
 
     if (categoriasComMeta.length === 0) {
-        summaryDiv.innerHTML = '<div style="text-align: center; color: #b0b0b0;">Clique para <span style="cursor:pointer; color:var(--meta-color); font-weight:700;" onclick="editarMeta(\'category\')">definir metas</span>.</div>';
+        summaryDiv.innerHTML = '<div style="text-align: center; color: #b0b0b0;">Clique no card acima para editar, ou <span style="cursor:pointer; color:var(--meta-color); font-weight:700;" onclick="editarMeta(\'category\')">defina metas por categoria</span>.</div>';
         return;
     }
 
@@ -2107,6 +2314,47 @@ function renderizarCalendario(dataList) {
     }
 }
 
+// Novo: Sugestão 18 - Lógica de Pagamento Parcial
+function pagamentoParcial(row) {
+    const registro = registros.find(r => r.row === row);
+    if (!registro || registro.tipo !== 'Pagar' || registro.status !== 'Pendente') return;
+
+    const valorOriginal = registro.valorOriginal || parseFloat(registro.valor);
+    const valorAtual = parseFloat(registro.valor);
+
+    const valorPagoStr = prompt(`Pagamento Parcial para:\n${registro.descricao} - ${formatarMoeda(valorAtual)}\n\nDigite o valor a pagar (máx: ${formatarMoeda(valorAtual)}):`);
+    
+    if (valorPagoStr === null) return;
+    
+    const valorPago = parseFloat(valorPagoStr.replace(',', '.'));
+    
+    if (isNaN(valorPago) || valorPago <= 0) {
+        alert("❌ Valor inválido.");
+        return;
+    }
+
+    if (valorPago > valorAtual) {
+        alert("❌ O valor pago não pode ser maior que o saldo devedor.");
+        return;
+    }
+    
+    const novoValorRestante = valorAtual - valorPago;
+    
+    if (novoValorRestante <= 0.01) { // Considera pago se o restante for mínimo
+        registro.valor = 0;
+        registro.status = 'Pago';
+        registro.valorOriginal = valorOriginal; 
+        alert(`✅ ${formatarMoeda(valorPago)} pago. Registro marcado como 'Pago'.`);
+    } else {
+        registro.valor = novoValorRestante.toFixed(2);
+        registro.valorOriginal = valorOriginal; 
+        alert(`✅ ${formatarMoeda(valorPago)} pago. Saldo restante: ${formatarMoeda(novoValorRestante)}.`);
+    }
+
+    // Envia a alteração para a planilha
+    enviarParaPlanilha({...registro, action:'update', campo1: registro.categoria});
+    aplicarFiltros(); 
+}
 
 function mudarStatus(row) {
   const registro = registros.find(r => r.row === row);
@@ -2114,13 +2362,27 @@ function mudarStatus(row) {
   
   let novoStatus = registro.status;
   if(registro.status === "Pendente") {
+    // Para marcar como Pago/Recebido, o valor deve ser o valor total original
     novoStatus = registro.tipo === "Pagar" ? "Pago" : "Recebido";
+    if (registro.valorOriginal && parseFloat(registro.valorOriginal) > parseFloat(registro.valor)) {
+        // Se houver saldo parcial, pergunta se quer pagar o restante
+        if (!confirm(`O saldo devedor é ${formatarMoeda(parseFloat(registro.valor))}. Deseja marcar como '${novoStatus}' (assumindo que o restante foi pago)?`)) {
+            return;
+        }
+    }
+    // Ao marcar como Pago/Recebido, reseta o valor para o valorOriginal para a planilha, e zera o valor do registro.
+    if (registro.valorOriginal) {
+        registro.valor = registro.valorOriginal;
+    }
+    registro.valorOriginal = null; // Reseta o controle parcial
   } else {
+    // Ao reverter, o valor volta ao que era, mas sem valorOriginal
     novoStatus = "Pendente";
+    registro.valorOriginal = null;
   }
   
   registro.status = novoStatus;
-  enviarParaPlanilha({...registro, action:'update'});
+  enviarParaPlanilha({...registro, action:'update', campo1: registro.categoria});
   aplicarFiltros(); 
 }
 
@@ -2225,15 +2487,16 @@ function exportarExcel(){
     r.descricao,
     r.categoria || '-',
     r.valor,
+    r.valorOriginal ? r.valorOriginal : '', // Valor Original (para parciais)
     r.status,
-    r.conta || 'N/A', // Adiciona Conta
-    r.recorrente, // Adiciona Recorrente
-    r.parcelaTotal > 1 ? `${r.parcelaAtual}/${r.parcelaTotal}` : '', // Adiciona Parcelas
+    r.conta || 'N/A', 
+    r.recorrente, 
+    r.parcelaTotal > 1 ? `${r.parcelaAtual}/${r.parcelaTotal}` : '', 
     r.campo2||'',
     r.campo3||''
   ]);
 
-  ws_data.unshift(["Fav","Data","Tipo","Descrição","Categoria","Valor","Status","Conta","Recorrente","Parcelas","Campo2","Campo3"]);
+  ws_data.unshift(["Fav","Data","Tipo","Descrição","Categoria","Valor","Valor Original","Status","Conta","Recorrente","Parcelas","Campo2","Campo3"]);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(ws_data);
   XLSX.utils.book_append_sheet(wb,ws,"Financeiro");
@@ -2247,10 +2510,11 @@ function editar(row){
     document.getElementById("sheetRowId").value=r.id;
     document.getElementById("data").value=r.data;
     document.getElementById("tipo").value=r.tipo;
-    document.getElementById("descricao").value=r.descricao;
-    document.getElementById("valor").value=r.valor;
+    // Se for edição de um parcial, o valor exibido é o restante (valor)
+    document.getElementById("valor").value=r.valor; 
     document.getElementById("status").value=r.status;
-    document.getElementById("categoria").value=r.categoria || r.campo1 || '';
+    document.getElementById("descricao").value=r.descricao.replace(/\s\(\d+\/\d+\)$/, ''); // Remove a marcação de parcela na edição
+    document.getElementById("categoria").value=r.categoria || '';
     document.getElementById("conta").value=r.conta || 'Conta Corrente';
     document.getElementById("recorrencia").value=r.recorrente || 'Nao';
     document.getElementById("parcelas").value=r.parcelaTotal || 1;
@@ -2291,6 +2555,18 @@ document.getElementById("descricao").addEventListener("input", function() {
     }
 });
 
+// Novo: Sugestão 25 - Lógica do FAB
+function toggleQuickMenu() {
+    document.getElementById('quickMenu').classList.toggle('visible');
+}
+
+function focarFormulario(tipo) {
+    document.getElementById("tipo").value = tipo;
+    toggleParcelaRecorrente();
+    document.getElementById("descricao").focus();
+    toggleQuickMenu(); // Fecha o menu
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
 
 document.addEventListener('keydown', (e) => {
     if (usuarioAutenticado) {
@@ -2306,6 +2582,7 @@ document.getElementById("data").valueAsDate=new Date();
 verificarAutenticacao();
 applyTheme();
 toggleParcelaRecorrente(); // Define o estado inicial
+atualizarCardObjetivo(); // Inicializa o card de objetivo
 
 setInterval(() => {
   if(usuarioAutenticado) {
