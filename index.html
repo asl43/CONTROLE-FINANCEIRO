@@ -227,6 +227,18 @@ header h1 {
 .card-sobra .card-value { color: var(--sobra-color); }
 .card-falta .card-value { color: var(--falta-color); }
 
+/* Animação Contas Vencidas */
+.card-vencido.pulsing {
+    animation: pulse-vencidos 1.5s infinite;
+    border-color: var(--vencido-color);
+}
+
+@keyframes pulse-vencidos {
+    0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(249, 115, 22, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+}
+
 .edit-hint {
     position: absolute;
     top: 15px;
@@ -477,6 +489,12 @@ th {
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+th:hover {
+    color: var(--primary-color);
 }
 
 th:first-child {
@@ -492,6 +510,7 @@ td {
     background: var(--input-bg-dark);
     border-top: 1px solid var(--input-border-dark);
     border-bottom: 1px solid var(--input-border-dark);
+    transition: background 0.2s ease;
 }
 
 td:first-child {
@@ -640,8 +659,8 @@ tr:hover td {
     box-shadow: 0 4px 20px var(--shadow-color);
 }
 
-/* Login */
-.login-overlay {
+/* Login/Modal Overlay */
+.login-overlay, .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -655,15 +674,50 @@ tr:hover td {
     z-index: 9999;
 }
 
-.login-box {
+.login-box, .modal-box {
     background: var(--card-bg-dark);
     padding: 50px;
     border-radius: 24px;
     box-shadow: 0 20px 60px var(--shadow-color);
     text-align: center;
     min-width: 400px;
+    max-width: 90%;
     border: 1px solid var(--input-border-dark);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
 }
+
+.modal-box {
+    text-align: left;
+    min-width: 500px;
+}
+
+.modal-box h2 {
+    color: var(--header-color-dark);
+    margin-bottom: 25px;
+    font-size: 1.8rem;
+    text-align: center;
+}
+
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary-dark);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 10px;
+}
+
+.modal-close:hover {
+    color: var(--pagar-color);
+    transform: rotate(90deg);
+}
+
 
 .login-box h2 {
     color: var(--header-color-dark);
@@ -695,6 +749,28 @@ tr:hover td {
 }
 
 /* Calendar */
+.calendar-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.calendar-controls button {
+    padding: 8px 15px;
+    width: auto;
+    font-size: 0.8rem;
+    background: var(--input-bg-dark);
+    border: 1px solid var(--input-border-dark);
+    color: var(--text-color-dark);
+    transition: background 0.3s ease;
+}
+
+.calendar-controls button:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
 .financial-calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -784,6 +860,42 @@ tr:hover td {
     color: var(--text-color-dark);
     margin-bottom: 8px;
 }
+
+/* Statistics Modal */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stat-item {
+    background: var(--input-bg-dark);
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 5px solid var(--primary-color);
+}
+
+.stat-item-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary-dark);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.stat-item-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.stat-entrada { border-left-color: var(--receber-color); }
+.stat-saida { border-left-color: var(--pagar-color); }
+.stat-saldo { border-left-color: var(--primary-color); }
+.stat-ticket { border-left-color: var(--warning-color); }
+.stat-records { border-left-color: var(--meta-color); }
+.stat-most-spent { border-left-color: var(--vencido-color); }
+
 
 /* Stars */
 .star-empty, .star {
@@ -885,6 +997,11 @@ tr:hover td {
         min-width: 90%;
         padding: 30px;
     }
+
+    .modal-box {
+        min-width: 90%;
+        padding: 30px;
+    }
     
     .fab-container {
         bottom: 20px;
@@ -896,6 +1013,11 @@ tr:hover td {
         height: 56px;
         font-size: 1.5em;
     }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
 }
 
 @media(max-width: 480px) {
@@ -953,6 +1075,57 @@ tr:hover td {
   </div>
 </div>
 
+<div class="modal-overlay" id="statisticsModal" style="display:none;">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('statisticsModal')">X</button>
+        <h2>📊 Estatísticas do Mês Atual</h2>
+        <p style="text-align: center; color: var(--text-secondary-dark); margin-bottom: 20px;" id="statsCurrentMonth"></p>
+
+        <div class="stats-grid">
+            <div class="stat-item stat-entrada">
+                <div class="stat-item-label">Entradas (Realiz.)</div>
+                <div class="stat-item-value summary-value-receber" id="statsEntradas">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-saida">
+                <div class="stat-item-label">Saídas (Realiz.)</div>
+                <div class="stat-item-value summary-value-pagar" id="statsSaidas">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-saldo">
+                <div class="stat-item-label">Saldo Realizado</div>
+                <div class="stat-item-value summary-value-saldo" id="statsSaldo">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-ticket">
+                <div class="stat-item-label">Ticket Médio (Gastos)</div>
+                <div class="stat-item-value" id="statsTicketMedio">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-most-spent">
+                <div class="stat-item-label">Categoria Mais Gasta</div>
+                <div class="stat-item-value" id="statsCategoriaMaisGasta">-</div>
+            </div>
+            <div class="stat-item stat-records">
+                <div class="stat-item-label">Total de Registros</div>
+                <div class="stat-item-value" id="statsTotalRegistros">0</div>
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 30px; font-size: 1.2em; color: var(--header-color-dark);">Projeção (Pendentes)</h3>
+        <div class="stats-grid">
+            <div class="stat-item stat-entrada">
+                <div class="stat-item-label">Entradas (Pend.)</div>
+                <div class="stat-item-value summary-value-receber" id="statsEntradasPendentes">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-saida">
+                <div class="stat-item-label">Saídas (Pend.)</div>
+                <div class="stat-item-value summary-value-pagar" id="statsSaidasPendentes">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-saldo">
+                <div class="stat-item-label">Saldo Projetado</div>
+                <div class="stat-item-value summary-value-saldo" id="statsSaldoProjetado">R$ 0,00</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container" id="mainContainer" style="display:none;">
 <header>
 <h1>💰 Controle Financeiro</h1>
@@ -966,7 +1139,7 @@ tr:hover td {
     <div class="card card-pagar"><div class="card-label">Total a Pagar</div><div class="card-value" id="totalPagar">R$ 0,00</div></div>
     <div class="card card-receber"><div class="card-label">Total a Receber</div><div class="card-value" id="totalReceber">R$ 0,00</div></div>
     <div class="card card-saldo"><div class="card-label">Saldo do Dia</div><div class="card-value" id="totalDia">R$ 0,00</div></div>
-    <div class="card card-vencido"><div class="card-label">Contas Vencidas</div><div class="card-value" id="totalVencidos">R$ 0,00</div></div>
+    <div class="card card-vencido" id="cardVencidos"><div class="card-label">Contas Vencidas</div><div class="card-value" id="totalVencidos">R$ 0,00</div></div>
     <div class="card card-pagar"><div class="card-label">Vencem 7 Dias</div><div class="card-value" id="vencemSeteDias">R$ 0,00</div></div>
     <div class="card card-pagar"><div class="card-label">Gasto Hoje</div><div class="card-value" id="gastoHoje">R$ 0,00</div></div>
     
@@ -993,8 +1166,7 @@ tr:hover td {
 <form id="financeForm">
 <input type="hidden" id="row">
 <input type="hidden" id="sheetRowId">
-
-<div class="form-group">
+<input type="hidden" id="categoriaSugerida" value=""> <div class="form-group">
 <label for="data">Data</label>
 <input type="date" id="data" required>
 </div>
@@ -1013,8 +1185,8 @@ tr:hover td {
 </div>
 
 <div class="form-group">
-    <label for="categoria">Categoria</label>
-    <select id="categoria" required>
+    <label for="categoria">Categoria <span id="sugestaoEmoji" style="display:none; color:var(--warning-color); font-weight:700;">(Sug.)</span></label>
+    <select id="categoria" required onchange="exibirMetaCategoria(this.value)">
         <option value="">Selecione a Categoria</option>
         <option value="Salário/Renda">Salário/Renda</option>
         <option value="Investimento">Investimento</option>
@@ -1026,7 +1198,13 @@ tr:hover td {
         <option value="Educação">Educação</option>
         <option value="Outros">Outros</option>
     </select>
-    <div id="categoryMetaIndicator" style="font-size: 0.8em; margin-top: 5px; color: var(--meta-color);"></div>
+    <div id="categoryMetaIndicator" style="font-size: 0.85em; margin-top: 8px; display:none;">
+        <span style="font-weight: 600;">Meta: <span id="metaValorForm" style="color:var(--meta-color);">R$ 0,00</span></span> | 
+        <span>Gasto: <span id="gastoAtualForm">R$ 0,00</span></span>
+        <div class="progress-bar" style="height: 4px; margin-top: 5px;">
+            <div class="progress-fill" id="metaCategoryProgress"></div>
+        </div>
+    </div>
 </div>
 
 <div class="form-group">
@@ -1204,6 +1382,10 @@ tr:hover td {
     </div>
     
     <div class="filter-item">
+        <button class="btn-filter btn-danger" onclick="limparFiltros()" style="width: 100%; margin-top: 23px;">🧹 Limpar Filtros</button>
+    </div>
+    
+    <div class="filter-item">
         <button class="btn-primary" onclick="exportarExcel()" style="width: 100%; margin-top: 23px;">📥 Excel</button>
     </div>
 </div>
@@ -1218,8 +1400,16 @@ tr:hover td {
 <table id="tabelaFinance">
 <thead>
 <tr>
-<th>⭐</th>
-<th>Data</th><th>Tipo</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th>Conta</th><th>Status</th><th>Info</th><th>Ações</th>
+<th onclick="ordenarTabela('fav')">⭐</th>
+<th onclick="ordenarTabela('data')">Data <span id="sort-data" style="color:var(--primary-color);">▼</span></th>
+<th onclick="ordenarTabela('tipo')">Tipo</th>
+<th onclick="ordenarTabela('descricao')">Descrição</th>
+<th onclick="ordenarTabela('categoria')">Categoria</th>
+<th onclick="ordenarTabela('valor')">Valor</th>
+<th onclick="ordenarTabela('conta')">Conta</th>
+<th onclick="ordenarTabela('status')">Status</th>
+<th>Info</th>
+<th>Ações</th>
 </tr>
 </thead>
 <tbody></tbody>
@@ -1240,7 +1430,12 @@ tr:hover td {
 
     <div class="chart-section">
         <h2>📅 Calendário Financeiro</h2>
-        <div id="calendarHeader" style="font-weight: 700; margin-bottom: 10px; text-align: center; color: var(--header-color-dark);">Mês/Ano</div>
+        <div class="calendar-controls">
+            <button onclick="mudarMes(-1)">◀️ Mês Anterior</button>
+            <div id="calendarHeader" style="font-weight: 700; color: var(--header-color-dark);">Mês/Ano</div>
+            <button onclick="mudarMes(1)">Próximo Mês ▶️</button>
+        </div>
+        
         <div class="financial-calendar" id="financialCalendar">
             <div class="calendar-header">Dom</div>
             <div class="calendar-header">Seg</div>
@@ -1260,6 +1455,8 @@ tr:hover td {
     <div class="quick-menu" id="quickMenu">
         <button class="btn-edit" onclick="focarFormulario('Receber')">💵 Receber</button>
         <button class="btn-danger" onclick="focarFormulario('Pagar')">💸 Pagar</button>
+        <button class="btn-primary" onclick="toggleStatistics()">📊 Estatísticas</button>
+        <button class="btn-filter" onclick="alert('Atalhos:\n\n+ ou N: Focar Formulário\nF: Favoritos\n\nEm desenvolvimento...')">💡 Atalhos</button>
     </div>
     <button class="fab-btn" onclick="toggleQuickMenu()">+</button>
 </div>
@@ -1272,6 +1469,9 @@ let usuarioAutenticado = false;
 let currentTheme = localStorage.getItem('theme') || 'dark';
 let filtroStatusAtual = 'todos';
 let filtroCategoriaAtual = 'all';
+let ordenacaoAtual = { chave: 'data', direcao: 'desc' }; // Estado de ordenação
+let calendarioMesAtual = new Date(); // Estado do calendário
+calendarioMesAtual.setDate(1);
 
 let metasPorCategoria = JSON.parse(localStorage.getItem('metasPorCategoria')) || {
     "Alimentação": 800,
@@ -1474,18 +1674,59 @@ function atualizarCardsGlobais(dataList) {
     document.getElementById("totalVencidos").innerText=formatarMoeda(totalVencidos);
     document.getElementById("vencemSeteDias").innerText=formatarMoeda(vencemSeteDias);
     
+    // Animação Contas Vencidas
+    const cardVencidos = document.getElementById("cardVencidos");
+    if (totalVencidos > 0) {
+        cardVencidos.classList.add("pulsing");
+    } else {
+        cardVencidos.classList.remove("pulsing");
+    }
+
     atualizarCardMeta(gastoHojeGlobal, gastoMesGlobal);
     atualizarCardObjetivo();
     atualizarContadoresFiltros(dataList);
     atualizarCategoryMetas(dataList);
-    renderizarCalendario(dataList);
+    renderizarCalendario(dataList, calendarioMesAtual);
+    // Atualiza o indicador de meta por categoria no formulário se estiver selecionado
+    exibirMetaCategoria(document.getElementById("categoria").value);
 }
 
 function mostrarRegistros(lista){
   const tbody = document.querySelector("#tabelaFinance tbody");
   tbody.innerHTML="";
   
-  atualizarCardsGlobais(registros); 
+  // Aplica a ordenação
+  lista.sort((a, b) => {
+      let valA = a[ordenacaoAtual.chave];
+      let valB = b[ordenacaoAtual.chave];
+
+      // Conversão para ordenação numérica
+      if (ordenacaoAtual.chave === 'valor') {
+          valA = parseFloat(valA);
+          valB = parseFloat(valB);
+      } else if (ordenacaoAtual.chave === 'data') {
+          valA = new Date(valA);
+          valB = new Date(valB);
+      } else if (ordenacaoAtual.chave === 'fav') {
+          valA = a.fav ? 1 : 0;
+          valB = b.fav ? 1 : 0;
+      }
+      
+      // Conversão para ordenação de string (case insensitive)
+      if (typeof valA === 'string' && typeof valB === 'string') {
+          valA = valA.toLowerCase();
+          valB = valB.toLowerCase();
+      }
+
+      if (valA < valB) return ordenacaoAtual.direcao === 'asc' ? -1 : 1;
+      if (valA > valB) return ordenacaoAtual.direcao === 'asc' ? 1 : -1;
+      return 0;
+  });
+  
+  // Atualiza os indicadores globais (só precisa se a lista de entrada for a lista global)
+  if (lista === registros) {
+      atualizarCardsGlobais(registros);
+  }
   
   lista.forEach(r=>{
     const tr=document.createElement("tr");
@@ -1530,6 +1771,29 @@ function mostrarRegistros(lista){
   atualizarGraficos(registros); 
 }
 
+function ordenarTabela(chave) {
+    if (ordenacaoAtual.chave === chave) {
+        ordenacaoAtual.direcao = ordenacaoAtual.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+        ordenacaoAtual.chave = chave;
+        ordenacaoAtual.direcao = chave === 'data' || chave === 'valor' ? 'desc' : 'asc';
+    }
+
+    // Limpa e atualiza os indicadores de ordenação (▲ / ▼)
+    document.querySelectorAll('[id^="sort-"]').forEach(span => {
+        span.textContent = '';
+        span.style.color = 'var(--text-secondary-dark)';
+    });
+    
+    const indicador = document.getElementById(`sort-${chave}`);
+    if (indicador) {
+        indicador.textContent = ordenacaoAtual.direcao === 'asc' ? ' ▲' : ' ▼';
+        indicador.style.color = 'var(--primary-color)';
+    }
+
+    aplicarFiltros(); 
+}
+
 function atualizarGraficos(dataList){
   const fontColor = currentTheme === 'light' ? '#1e293b' : '#e8eaf0';
   const gridColor = currentTheme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
@@ -1539,6 +1803,7 @@ function atualizarGraficos(dataList){
   const entradasRealizadas = dataList.filter(r => r.tipo === "Receber" && r.status === "Recebido");
   const saidasRealizadas = dataList.filter(r => r.tipo === "Pagar" && r.status === "Pago");
 
+  // Gráfico 1: Gastos por Categoria (Pendentes)
   const gastosPendentesPorCategoria = pagamentosPendentes.reduce((acc, r) => {
     acc[r.categoria] = (acc[r.categoria] || 0) + parseFloat(r.valor);
     return acc;
@@ -1568,6 +1833,7 @@ function atualizarGraficos(dataList){
     }
   });
 
+  // Gráfico 2: Fluxo de Caixa
   const dadosFluxo = {};
   const dataInicioFluxo = new Date();
   dataInicioFluxo.setMonth(dataInicioFluxo.getMonth() - 5);
@@ -1631,9 +1897,11 @@ function atualizarGraficos(dataList){
     }
   });
 
+  // Gráfico 3: Comparativo Mensal
   const hoje = new Date();
   const mesAtualNome = hoje.toLocaleDateString('pt-BR', { month: 'long' });
-  const mesAnterior = new Date(hoje.setMonth(hoje.getMonth() - 1));
+  const mesAnterior = new Date(hoje);
+  mesAnterior.setMonth(hoje.getMonth() - 1);
   const mesAnteriorNome = mesAnterior.toLocaleDateString('pt-BR', { month: 'long' });
   
   const categoriaLabelsComp = ["Receitas", "Despesas"];
@@ -1645,13 +1913,13 @@ function atualizarGraficos(dataList){
     const valor = parseFloat(r.valor);
     
     if (dataRegistro.getMonth() === new Date().getMonth() && dataRegistro.getFullYear() === new Date().getFullYear()) {
-      if (r.tipo === "Receber" && r.status === "Recebido") receitaAtual += valor;
-      else if (r.tipo === "Pagar" && r.status === "Pago") despesaAtual += valor;
+      if (r.tipo === "Receber" && (r.status === "Recebido" || r.status === "Pago")) receitaAtual += valor;
+      else if (r.tipo === "Pagar" && (r.status === "Pago" || r.status === "Recebido")) despesaAtual += valor;
     }
     
     if (dataRegistro.getMonth() === mesAnterior.getMonth() && dataRegistro.getFullYear() === mesAnterior.getFullYear()) {
-      if (r.tipo === "Receber" && r.status === "Recebido") receitaAnterior += valor;
-      else if (r.tipo === "Pagar" && r.status === "Pago") despesaAnterior += valor;
+      if (r.tipo === "Receber" && (r.status === "Recebido" || r.status === "Pago")) receitaAnterior += valor;
+      else if (r.tipo === "Pagar" && (r.status === "Pago" || r.status === "Recebido")) despesaAnterior += valor;
     }
   });
 
@@ -1678,7 +1946,7 @@ function atualizarGraficos(dataList){
       responsive: true,
       plugins: {
         legend: {position: 'bottom', labels: {color: fontColor, font: {size: 11, weight: '600'}}},
-        title: {display: true, text: 'Comparativo', color: fontColor, font:{size:13,weight:'600'}}
+        title: {display: true, text: 'Comparativo Realizado', color: fontColor, font:{size:13,weight:'600'}}
       },
       scales: {
         x: {ticks: {color: fontColor}, grid: {color: gridColor}},
@@ -1687,6 +1955,7 @@ function atualizarGraficos(dataList){
     }
   });
 
+  // Gráfico 4: Gastos Diários
   const gastosPorDia = {};
   const hojeDia = new Date();
   
@@ -1737,6 +2006,7 @@ function atualizarGraficos(dataList){
     }
   });
   
+  // Gráfico 5: Gastos Mensais por Categoria
   const gastosPorMesECategoria = {};
   const categorias = ["Alimentação", "Moradia/Aluguel", "Transporte", "Lazer", "Saúde", "Educação", "Outros"];
   const mesesLabels = [];
@@ -1870,7 +2140,9 @@ async function carregarRegistros(){
 }
 
 function aplicarRegrasAutomacao(descricao, categoria) {
-    if (categoria && categoria !== 'Selecione a Categoria') return categoria;
+    if (categoria && categoria !== 'Selecione a Categoria' && document.getElementById("categoriaSugerida").value !== '') {
+        return categoria;
+    }
 
     const termoNormalizado = descricao.toLowerCase().trim();
     for (const regra of regrasAutomacao) {
@@ -1895,7 +2167,10 @@ document.getElementById("financeForm").addEventListener("submit",function(e){
   const recorrente = document.getElementById("recorrencia").value;
   const parcelas = tipo === 'Pagar' ? parseInt(document.getElementById("parcelas").value) : 1;
   
-  categoria = aplicarRegrasAutomacao(descricao, categoria);
+  // Garante que a categoria sugerida (se houver) é usada se o usuário não selecionou outra
+  if(!categoria || categoria === 'Selecione a Categoria') {
+     categoria = document.getElementById("categoriaSugerida").value || 'Outros';
+  }
   
   if(!categoria || categoria === 'Selecione a Categoria') {
     alert("Preencha a Categoria (obrigatória).");
@@ -1969,6 +2244,9 @@ document.getElementById("financeForm").addEventListener("submit",function(e){
   document.getElementById("data").valueAsDate=new Date();
   document.getElementById("parcelas").value = 1;
   document.getElementById("recorrencia").value = 'Nao';
+  document.getElementById("categoriaSugerida").value = '';
+  document.getElementById("sugestaoEmoji").style.display = 'none';
+  exibirMetaCategoria(document.getElementById("categoria").value);
   toggleParcelaRecorrente();
   mostraApenasFav = false;
   document.getElementById("btnFiltrarFav").classList.remove("active");
@@ -2101,6 +2379,22 @@ function aplicarFiltros() {
     }
 
     mostrarRegistros(filtrados);
+}
+
+function limparFiltros() {
+    document.getElementById("buscar").value = '';
+    document.getElementById("filtroCategoria").value = 'all';
+    document.getElementById("filtroPeriodo").value = '1';
+    document.getElementById("customDaysInput").style.display = 'none';
+    document.getElementById("diasCustomizados").value = '';
+    document.getElementById("dataInicio").value = '';
+    document.getElementById("dataFim").value = '';
+    mostraApenasFav = false;
+    document.getElementById("btnFiltrarFav").classList.remove("active");
+    filtroStatusAtual = 'todos';
+    document.querySelectorAll('.status-filter-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector('.filter-todos').classList.add('active');
+    aplicarFiltros();
 }
 
 document.getElementById("buscar").addEventListener("input", aplicarFiltros);
@@ -2277,6 +2571,7 @@ function editarMeta(type) {
                 }
                 localStorage.setItem('metasPorCategoria', JSON.stringify(metasPorCategoria));
                 atualizarCardsGlobais(registros);
+                exibirMetaCategoria(document.getElementById("categoria").value); // Atualiza o indicador no form
             } else {
                 alert('❌ Valor inválido!');
             }
@@ -2284,11 +2579,61 @@ function editarMeta(type) {
     }
 }
 
+function getGastosMesCategoria(categoria) {
+    const mesAtual = new Date().getMonth();
+    const anoAtual = new Date().getFullYear();
+
+    return registros.filter(r => 
+        r.tipo === "Pagar" && 
+        (r.status === "Pago" || r.status === "Recebido") &&
+        r.categoria === categoria &&
+        new Date(r.data + 'T12:00:00').getMonth() === mesAtual && 
+        new Date(r.data + 'T12:00:00').getFullYear() === anoAtual
+    ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
+}
+
+function exibirMetaCategoria(categoria) {
+    const indicator = document.getElementById("categoryMetaIndicator");
+    const meta = metasPorCategoria[categoria];
+    
+    if (!categoria || categoria === 'Selecione a Categoria' || !meta) {
+        indicator.style.display = 'none';
+        return;
+    }
+
+    const gastoAtual = getGastosMesCategoria(categoria);
+    const percentual = meta > 0 ? (gastoAtual / meta * 100) : 0;
+    
+    document.getElementById("metaValorForm").innerText = formatarMoeda(meta);
+    document.getElementById("gastoAtualForm").innerText = formatarMoeda(gastoAtual);
+    indicator.style.display = 'block';
+
+    const progressBar = document.getElementById("metaCategoryProgress");
+    progressBar.style.width = Math.min(percentual, 100) + '%';
+    
+    progressBar.classList.remove('warning', 'danger');
+    progressBar.style.backgroundColor = 'var(--receber-color)'; 
+    
+    if(percentual >= 100) {
+        progressBar.classList.add('danger');
+        progressBar.style.backgroundColor = 'var(--pagar-color)';
+        document.getElementById("gastoAtualForm").style.color = 'var(--pagar-color)';
+    } else if(percentual >= 80) {
+        progressBar.classList.add('warning');
+        progressBar.style.backgroundColor = 'var(--warning-color)';
+        document.getElementById("gastoAtualForm").style.color = 'var(--warning-color)';
+    } else {
+        progressBar.style.backgroundColor = 'var(--receber-color)';
+        document.getElementById("gastoAtualForm").style.color = 'var(--receber-color)';
+    }
+}
+
+
 function atualizarCategoryMetas(dataList) {
     const summaryDiv = document.getElementById("categoryMetasSummary");
     summaryDiv.innerHTML = '';
     
-    const gastosMesPorCategoria = dataList.filter(r => r.tipo === "Pagar" && r.status === "Pago")
+    const gastosMesPorCategoria = dataList.filter(r => r.tipo === "Pagar" && (r.status === "Pago" || r.status === "Recebido"))
         .reduce((acc, r) => {
             const dataRegistro = new Date(r.data + 'T12:00:00');
             const mesAtual = new Date().getMonth();
@@ -2317,36 +2662,48 @@ function atualizarCategoryMetas(dataList) {
         item.onclick = () => editarMeta('category');
 
         let progressClass = '';
+        let progressColor = 'var(--receber-color)';
+        let gastoColor = 'var(--receber-color)';
+
         if (percentual >= 100) {
             progressClass = 'danger';
+            progressColor = 'var(--pagar-color)';
+            gastoColor = 'var(--pagar-color)';
         } else if (percentual >= 80) {
             progressClass = 'warning';
+            progressColor = 'var(--warning-color)';
+            gastoColor = 'var(--warning-color)';
         }
         
         item.innerHTML = `
             <div class="label">
                 <span>${cat}</span>
-                <span style="color: ${percentual > 100 ? 'var(--falta-color)' : 'var(--sobra-color)'};">
-                    ${formatarMoeda(gasto)} / ${formatarMoeda(meta)} (${percentual.toFixed(0)}%)
+                <span style="color: ${gastoColor};">
+                    ${formatarMoeda(gasto)} / ${formatarMoeda(meta)} 
+                    <span style="font-weight: 800;">(${percentual.toFixed(0)}%)</span>
                 </span>
             </div>
             <div class="progress-bar" style="height: 6px;">
-                <div class="progress-fill ${progressClass}" style="width: ${Math.min(percentual, 100)}%;"></div>
+                <div class="progress-fill ${progressClass}" style="width: ${Math.min(percentual, 100)}%; background-color: ${progressColor};"></div>
             </div>
         `;
         summaryDiv.appendChild(item);
     });
 }
 
-function renderizarCalendario(dataList) {
+function mudarMes(delta) {
+    calendarioMesAtual.setMonth(calendarioMesAtual.getMonth() + delta);
+    renderizarCalendario(registros, calendarioMesAtual);
+}
+
+function renderizarCalendario(dataList, dataBase) {
     const calDiv = document.getElementById('financialCalendar');
     calDiv.innerHTML = '<div class="calendar-header">Dom</div><div class="calendar-header">Seg</div><div class="calendar-header">Ter</div><div class="calendar-header">Qua</div><div class="calendar-header">Qui</div><div class="calendar-header">Sex</div><div class="calendar-header">Sáb</div>';
     
-    const hoje = new Date();
-    const ano = hoje.getFullYear();
-    const mes = hoje.getMonth();
+    const ano = dataBase.getFullYear();
+    const mes = dataBase.getMonth();
     
-    document.getElementById('calendarHeader').innerText = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    document.getElementById('calendarHeader').innerText = dataBase.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     
     const primeiroDia = new Date(ano, mes, 1);
     const ultimoDia = new Date(ano, mes + 1, 0);
@@ -2354,7 +2711,7 @@ function renderizarCalendario(dataList) {
     const diaDaSemanaInicio = primeiroDia.getDay();
 
     for (let i = 0; i < diaDaSemanaInicio; i++) {
-        calDiv.innerHTML += '<div class="calendar-day" style="background:none; border:none;"></div>';
+        calDiv.innerHTML += '<div class="calendar-day" style="background:none; border:none; border-top:none; border-bottom:none;"></div>';
     }
 
     const eventosDoMes = dataList.filter(r => {
@@ -2480,7 +2837,7 @@ function exportarExcel(){
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0); 
         dataFimFiltro = new Date();
-        dataFimFiltro.setHours(23, 59, 59, 999);
+        dataFimFiltro.setHours(23, 59, 59, 999); 
 
         if (periodoSelecionado === '1') {
             dataInicioFiltro = hoje;
@@ -2584,13 +2941,16 @@ function editar(row){
     document.getElementById("sheetRowId").value=r.id;
     document.getElementById("data").value=r.data;
     document.getElementById("tipo").value=r.tipo;
-    document.getElementById("valor").value=r.valor; 
+    document.getElementById("valor").value=r.valorOriginal ? r.valorOriginal : r.valor; // Coloca o valor original no campo
     document.getElementById("status").value=r.status;
     document.getElementById("descricao").value=r.descricao.replace(/\s\(\d+\/\d+\)$/, '');
     document.getElementById("categoria").value=r.categoria || '';
     document.getElementById("conta").value=r.conta || 'Conta Corrente';
     document.getElementById("recorrencia").value=r.recorrente || 'Nao';
     document.getElementById("parcelas").value=r.parcelaTotal || 1;
+    document.getElementById("categoriaSugerida").value = ''; // Limpa a sugestão ao editar
+    document.getElementById("sugestaoEmoji").style.display = 'none'; // Esconde o emoji
+    exibirMetaCategoria(r.categoria); // Exibe a meta da categoria atual
     toggleParcelaRecorrente();
     document.getElementById("campo2").value=r.campo2||'';
     document.getElementById("campo3").value=r.campo3||'';
@@ -2618,17 +2978,48 @@ function toggleFav(row){
 }
 
 document.getElementById("descricao").addEventListener("input", function() {
-    const categoriaAtual = document.getElementById("categoria").value;
-    if (!categoriaAtual || categoriaAtual === 'Selecione a Categoria') {
-        const categoriaSugerida = aplicarRegrasAutomacao(this.value, null);
-        if (categoriaSugerida) {
-            document.getElementById("categoria").value = categoriaSugerida;
-        }
+    const categoriaSelecionada = document.getElementById("categoria").value;
+    const categoriaSugerida = aplicarRegrasAutomacao(this.value, null);
+    
+    document.getElementById("categoriaSugerida").value = categoriaSugerida;
+    
+    if (categoriaSugerida && categoriaSugerida !== 'Selecione a Categoria' && (!categoriaSelecionada || categoriaSelecionada === 'Selecione a Categoria')) {
+        document.getElementById("categoria").value = categoriaSugerida;
+        document.getElementById("sugestaoEmoji").style.display = 'inline';
+    } else {
+        document.getElementById("sugestaoEmoji").style.display = 'none';
     }
+    exibirMetaCategoria(document.getElementById("categoria").value);
 });
 
+document.getElementById("categoria").addEventListener("change", function() {
+    // Se o usuário mudar a categoria, a sugestão automática é ignorada
+    document.getElementById("categoriaSugerida").value = ''; 
+    document.getElementById("sugestaoEmoji").style.display = 'none';
+    exibirMetaCategoria(this.value);
+});
+
+
 function toggleQuickMenu() {
-    document.getElementById('quickMenu').classList.toggle('visible');
+    const quickMenu = document.getElementById('quickMenu');
+    quickMenu.classList.toggle('visible');
+    
+    // Adicionar listener para fechar o menu ao clicar fora
+    if (quickMenu.classList.contains('visible')) {
+        document.addEventListener('click', closeQuickMenuOnClickOutside);
+    } else {
+        document.removeEventListener('click', closeQuickMenuOnClickOutside);
+    }
+}
+
+function closeQuickMenuOnClickOutside(event) {
+    const fabContainer = document.getElementById('fabContainer');
+    const quickMenu = document.getElementById('quickMenu');
+    
+    if (quickMenu.classList.contains('visible') && !fabContainer.contains(event.target)) {
+        quickMenu.classList.remove('visible');
+        document.removeEventListener('click', closeQuickMenuOnClickOutside);
+    }
 }
 
 function focarFormulario(tipo) {
@@ -2638,6 +3029,89 @@ function focarFormulario(tipo) {
     toggleQuickMenu();
     window.scrollTo({top: 0, behavior: 'smooth'});
 }
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+function toggleStatistics() {
+    const modal = document.getElementById('statisticsModal');
+    if (modal.style.display === 'flex') {
+        closeModal('statisticsModal');
+    } else {
+        updateMonthlyStatistics();
+        modal.style.display = 'flex';
+        toggleQuickMenu(); // Fecha o FAB
+    }
+}
+
+function updateMonthlyStatistics() {
+    const hoje = new Date();
+    const mesAtual = hoje.getMonth();
+    const anoAtual = hoje.getFullYear();
+    const mesNome = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    
+    document.getElementById('statsCurrentMonth').innerText = mesNome.toUpperCase();
+
+    let entradaRealizada = 0;
+    let saidaRealizada = 0;
+    let entradaPendente = 0;
+    let saidaPendente = 0;
+    let totalGastos = 0;
+    let contagemGastos = 0;
+    let gastosPorCategoria = {};
+    let totalRegistros = 0;
+
+    registros.forEach(r => {
+        const dataRegistro = new Date(r.data + 'T12:00:00');
+        if (dataRegistro.getMonth() === mesAtual && dataRegistro.getFullYear() === anoAtual) {
+            totalRegistros++;
+            const valor = parseFloat(r.valor);
+
+            if (r.tipo === "Receber") {
+                if (r.status === "Recebido" || r.status === "Pago") {
+                    entradaRealizada += valor;
+                } else if (r.status === "Pendente") {
+                    entradaPendente += valor;
+                }
+            } else if (r.tipo === "Pagar") {
+                if (r.status === "Pago" || r.status === "Recebido") {
+                    saidaRealizada += valor;
+                    totalGastos += valor;
+                    contagemGastos++;
+                    gastosPorCategoria[r.categoria] = (gastosPorCategoria[r.categoria] || 0) + valor;
+                } else if (r.status === "Pendente") {
+                    saidaPendente += valor;
+                }
+            }
+        }
+    });
+
+    const saldoRealizado = entradaRealizada - saidaRealizada;
+    const saldoProjetado = (entradaRealizada + entradaPendente) - (saidaRealizada + saidaPendente);
+    const ticketMedio = contagemGastos > 0 ? totalGastos / contagemGastos : 0;
+    
+    let categoriaMaisGasta = '-';
+    let maxGasto = 0;
+    for (const cat in gastosPorCategoria) {
+        if (gastosPorCategoria[cat] > maxGasto) {
+            maxGasto = gastosPorCategoria[cat];
+            categoriaMaisGasta = `${cat} (${formatarMoeda(maxGasto)})`;
+        }
+    }
+
+    document.getElementById('statsEntradas').innerText = formatarMoeda(entradaRealizada);
+    document.getElementById('statsSaidas').innerText = formatarMoeda(saidaRealizada);
+    document.getElementById('statsSaldo').innerText = formatarMoeda(saldoRealizado);
+    document.getElementById('statsTicketMedio').innerText = formatarMoeda(ticketMedio);
+    document.getElementById('statsCategoriaMaisGasta').innerText = categoriaMaisGasta;
+    document.getElementById('statsTotalRegistros').innerText = totalRegistros;
+    
+    document.getElementById('statsEntradasPendentes').innerText = formatarMoeda(entradaPendente);
+    document.getElementById('statsSaidasPendentes').innerText = formatarMoeda(saidaPendente);
+    document.getElementById('statsSaldoProjetado').innerText = formatarMoeda(saldoProjetado);
+}
+
 
 document.addEventListener('keydown', (e) => {
     if (usuarioAutenticado) {
@@ -2654,6 +3128,13 @@ verificarAutenticacao();
 applyTheme();
 toggleParcelaRecorrente();
 atualizarCardObjetivo();
+
+// Inicializa o calendário com o mês atual
+renderizarCalendario(registros, calendarioMesAtual);
+
+// Ajusta a ordenação inicial dos cabeçalhos
+document.getElementById(`sort-${ordenacaoAtual.chave}`).textContent = ordenacaoAtual.direcao === 'asc' ? ' ▲' : ' ▼';
+
 
 setInterval(() => {
   if(usuarioAutenticado) {
