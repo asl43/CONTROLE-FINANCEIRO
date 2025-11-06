@@ -1158,6 +1158,14 @@ tr:hover td {
         </div>
         <div style="font-size: 0.85em; margin-top: 8px; color: var(--text-secondary-dark);" id="metaPercentual">0% utilizado</div>
     </div>
+<!-- Trecho inserido dentro do <div class="cards-summary">, após o card "Meta de Gastos (Mês)" -->
+    <div class="card card-saldo">
+    <div class="card-label">Renda Líquida Disponível</div>
+    <div class="card-value" id="rendaLiquidaDisponivel">R$ 0,00</div>
+    <div style="font-size: 0.8em; margin-top: 8px; color: var(--text-secondary-dark);">
+        (Total recebido − Total gasto)
+    </div>
+</div>
 </div>
 
 <div class="content two-col">
@@ -1461,6 +1469,7 @@ tr:hover td {
     <button class="fab-btn" onclick="toggleQuickMenu()">+</button>
 </div>
 
+
 <script>
 let registros = [];
 let chart, chartDiario, chartMensal, chartFluxoCaixa, chartCompMensal;
@@ -1570,94 +1579,110 @@ function atualizarStatusSync(sincronizado) {
 }
 
 function atualizarCardsGlobais(dataList) {
-    let totalPagarGlobal=0,totalReceberGlobal=0;
+    let totalPagarGlobal = 0, totalReceberGlobal = 0;
     let gastoHojeGlobal = 0, gastoMesGlobal = 0;
     let totalVencidos = 0;
     let vencemSeteDias = 0;
-    
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     const hojeStr = hoje.toISOString().split('T')[0];
     const limiteSeteDias = new Date(hoje);
     limiteSeteDias.setDate(hoje.getDate() + 7);
-
     const mesAtual = new Date().getMonth();
     const anoAtual = new Date().getFullYear();
 
+    // Contadores para o novo card
+    let totalRecebidoGlobal = 0;
+    let totalGastoGlobal = 0;
+
     dataList.forEach(r => {
-        const dataRegistro = new Date(r.data + 'T12:00:00'); 
+        const dataRegistro = new Date(r.data + 'T12:00:00');
         const valor = parseFloat(r.valor);
 
-        if(r.tipo==="Pagar") {
-            if(r.status==="Pendente") totalPagarGlobal += valor;
-        } else if(r.tipo==="Receber") {
-            if(r.status==="Pendente") totalReceberGlobal += valor;
+        // Totais pendentes (já existentes)
+        if (r.tipo === "Pagar") {
+            if (r.status === "Pendente") totalPagarGlobal += valor;
+        } else if (r.tipo === "Receber") {
+            if (r.status === "Pendente") totalReceberGlobal += valor;
         }
-        
-        if(r.data === hojeStr && r.tipo==="Pagar" && r.status === "Pago") {
+
+        // Gastos do dia
+        if (r.data === hojeStr && r.tipo === "Pagar" && r.status === "Pago") {
             gastoHojeGlobal += valor;
         }
-        
-        if(dataRegistro.getMonth() === mesAtual && dataRegistro.getFullYear() === anoAtual && r.tipo==="Pagar" && r.status === "Pago") {
+
+        // Gastos do mês
+        if (dataRegistro.getMonth() === mesAtual && dataRegistro.getFullYear() === anoAtual && r.tipo === "Pagar" && r.status === "Pago") {
             gastoMesGlobal += valor;
         }
-        
-        if(r.tipo==="Pagar" && r.status==="Pendente") {
+
+        // Contas vencidas e vencendo
+        if (r.tipo === "Pagar" && r.status === "Pendente") {
             if (dataRegistro < hoje) {
                 totalVencidos += valor;
             }
             if (dataRegistro >= hoje && dataRegistro <= limiteSeteDias) {
-                 vencemSeteDias += valor;
+                vencemSeteDias += valor;
             }
+        }
+
+        // --- Novo: cálculo da Renda Líquida Disponível ---
+        if (r.tipo === "Receber" && (r.status === "Recebido" || r.status === "Pago")) {
+            totalRecebidoGlobal += valor;
+        }
+        if (r.tipo === "Pagar" && (r.status === "Pago" || r.status === "Recebido")) {
+            totalGastoGlobal += valor;
         }
     });
 
-    let entradaRealizadaMes = dataList.filter(r => 
-        r.tipo === "Receber" && 
+    const rendaLiquida = totalRecebidoGlobal - totalGastoGlobal;
+    document.getElementById("rendaLiquidaDisponivel").innerText = formatarMoeda(rendaLiquida);
+
+    // Cálculo do saldo do mês atual
+    let entradaRealizadaMes = dataList.filter(r =>
+        r.tipo === "Receber" &&
         (r.status === "Recebido" || r.status === "Pago") &&
-        new Date(r.data + 'T12:00:00').getMonth() === mesAtual && 
+        new Date(r.data + 'T12:00:00').getMonth() === mesAtual &&
         new Date(r.data + 'T12:00:00').getFullYear() === anoAtual
     ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
 
-    let saidaRealizadaMes = dataList.filter(r => 
-        r.tipo === "Pagar" && 
+    let saidaRealizadaMes = dataList.filter(r =>
+        r.tipo === "Pagar" &&
         (r.status === "Pago" || r.status === "Recebido") &&
-        new Date(r.data + 'T12:00:00').getMonth() === mesAtual && 
+        new Date(r.data + 'T12:00:00').getMonth() === mesAtual &&
         new Date(r.data + 'T12:00:00').getFullYear() === anoAtual
     ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
 
     const saldoMesAtual = entradaRealizadaMes - saidaRealizadaMes;
 
+    // Média dos últimos 3 meses
     let saldoTotal3M = 0;
     let mesesContados = 0;
-    for(let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 3; i++) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
         const mesAnterior = d.getMonth();
         const anoAnterior = d.getFullYear();
-
-        const entradaAnt = dataList.filter(r => 
-            r.tipo === "Receber" && 
+        const entradaAnt = dataList.filter(r =>
+            r.tipo === "Receber" &&
             (r.status === "Recebido" || r.status === "Pago") &&
-            new Date(r.data + 'T12:00:00').getMonth() === mesAnterior && 
+            new Date(r.data + 'T12:00:00').getMonth() === mesAnterior &&
             new Date(r.data + 'T12:00:00').getFullYear() === anoAnterior
         ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
-
-        const saidaAnt = dataList.filter(r => 
-            r.tipo === "Pagar" && 
+        const saidaAnt = dataList.filter(r =>
+            r.tipo === "Pagar" &&
             (r.status === "Pago" || r.status === "Recebido") &&
-            new Date(r.data + 'T12:00:00').getMonth() === mesAnterior && 
+            new Date(r.data + 'T12:00:00').getMonth() === mesAnterior &&
             new Date(r.data + 'T12:00:00').getFullYear() === anoAnterior
         ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
-
         if (entradaAnt > 0 || saidaAnt > 0) {
             saldoTotal3M += (entradaAnt - saidaAnt);
             mesesContados++;
         }
     }
     const media3Meses = mesesContados > 0 ? saldoTotal3M / mesesContados : 0;
-    document.getElementById("media3Meses").innerText = formatarMoeda(media3Meses);
 
+    document.getElementById("media3Meses").innerText = formatarMoeda(media3Meses);
     document.getElementById("sobraFaltaMes").innerText = formatarMoeda(saldoMesAtual);
     const cardSobra = document.getElementById("cardSobraMes");
     cardSobra.classList.remove('card-sobra', 'card-falta');
@@ -1667,13 +1692,14 @@ function atualizarCardsGlobais(dataList) {
         cardSobra.classList.add('card-falta');
     }
 
-    document.getElementById("totalPagar").innerText=formatarMoeda(totalPagarGlobal);
-    document.getElementById("totalReceber").innerText=formatarMoeda(totalReceberGlobal);
-    document.getElementById("totalDia").innerText=formatarMoeda(totalReceberGlobal-totalPagarGlobal);
-    document.getElementById("gastoHoje").innerText=formatarMoeda(gastoHojeGlobal);
-    document.getElementById("totalVencidos").innerText=formatarMoeda(totalVencidos);
-    document.getElementById("vencemSeteDias").innerText=formatarMoeda(vencemSeteDias);
-    
+    // Atualização dos cards existentes
+    document.getElementById("totalPagar").innerText = formatarMoeda(totalPagarGlobal);
+    document.getElementById("totalReceber").innerText = formatarMoeda(totalReceberGlobal);
+    document.getElementById("totalDia").innerText = formatarMoeda(totalReceberGlobal - totalPagarGlobal);
+    document.getElementById("gastoHoje").innerText = formatarMoeda(gastoHojeGlobal);
+    document.getElementById("totalVencidos").innerText = formatarMoeda(totalVencidos);
+    document.getElementById("vencemSeteDias").innerText = formatarMoeda(vencemSeteDias);
+
     // Animação Contas Vencidas
     const cardVencidos = document.getElementById("cardVencidos");
     if (totalVencidos > 0) {
@@ -1687,10 +1713,8 @@ function atualizarCardsGlobais(dataList) {
     atualizarContadoresFiltros(dataList);
     atualizarCategoryMetas(dataList);
     renderizarCalendario(dataList, calendarioMesAtual);
-    // Atualiza o indicador de meta por categoria no formulário se estiver selecionado
     exibirMetaCategoria(document.getElementById("categoria").value);
 }
-
 function mostrarRegistros(lista){
   const tbody = document.querySelector("#tabelaFinance tbody");
   tbody.innerHTML="";
