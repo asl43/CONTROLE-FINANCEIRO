@@ -55,7 +55,6 @@ body {
     transition: background 0.3s ease, color 0.3s ease;
     overflow-x: hidden;
 }
-/* Background Gradient */
 body::before {
     content: '';
     position: fixed;
@@ -76,7 +75,6 @@ body::before {
     margin: 0 auto;
     padding: 20px;
 }
-/* Header */
 header {
     text-align: center;
     padding: 40px 20px;
@@ -116,7 +114,6 @@ header h1 {
     transform: translateY(-2px);
     box-shadow: 0 6px 30px var(--shadow-color);
 }
-/* Sync Status */
 .sync-status {
     display: inline-flex;
     align-items: center;
@@ -148,7 +145,6 @@ header h1 {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.6; transform: scale(1.2); }
 }
-/* Cards Summary */
 .cards-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -202,7 +198,6 @@ header h1 {
 .card-meta .card-value { color: var(--meta-color); }
 .card-sobra .card-value { color: var(--sobra-color); }
 .card-falta .card-value { color: var(--falta-color); }
-/* Animação Contas Vencidas */
 .card-vencido.pulsing {
     animation: pulse-vencidos 1.5s infinite;
     border-color: var(--vencido-color);
@@ -243,7 +238,6 @@ header h1 {
 .progress-fill.danger {
     background: linear-gradient(90deg, var(--pagar-color), var(--vencido-color));
 }
-/* Content Grid */
 .content {
     display: grid;
     gap: 25px;
@@ -271,7 +265,6 @@ header h1 {
     margin-bottom: 25px;
     color: var(--header-color-dark);
 }
-/* Form Styles */
 .form-group {
     margin-bottom: 20px;
 }
@@ -300,7 +293,6 @@ input:focus, select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px var(--glow-color);
 }
-/* Buttons */
 button {
     padding: 14px 28px;
     border: none;
@@ -373,7 +365,6 @@ button:hover::before {
     border-color: var(--primary-color);
     color: white;
 }
-/* Status Filters */
 .status-filters {
     display: flex;
     gap: 12px;
@@ -414,7 +405,6 @@ button:hover::before {
     font-size: 0.8rem;
     font-weight: 700;
 }
-/* Table */
 table {
     width: 100%;
     border-collapse: separate;
@@ -493,7 +483,6 @@ tr:hover td {
     gap: 8px;
     flex-wrap: wrap;
 }
-/* Filter Controls */
 .filter-controls {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -523,7 +512,6 @@ tr:hover td {
 .summary-value-pagar { color: var(--pagar-color); }
 .summary-value-receber { color: var(--receber-color); }
 .summary-value-saldo { color: var(--primary-color); }
-/* FAB */
 .fab-container {
     position: fixed;
     bottom: 30px;
@@ -574,7 +562,6 @@ tr:hover td {
     font-weight: 600;
     box-shadow: 0 4px 20px var(--shadow-color);
 }
-/* Modal Overlay */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -634,7 +621,6 @@ tr:hover td {
 .loading.show {
     display: block;
 }
-/* Calendar */
 .calendar-controls {
     display: flex;
     justify-content: space-between;
@@ -698,7 +684,6 @@ tr:hover td {
     box-shadow: 0 0 15px var(--glow-color);
     border-color: var(--primary-color);
 }
-/* Category Progress */
 .category-progress-container {
     margin-top: 25px;
     padding: 20px;
@@ -731,7 +716,6 @@ tr:hover td {
     color: var(--text-color-dark);
     margin-bottom: 8px;
 }
-/* Statistics Modal */
 .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -761,7 +745,6 @@ tr:hover td {
 .stat-ticket { border-left-color: var(--warning-color); }
 .stat-records { border-left-color: var(--meta-color); }
 .stat-most-spent { border-left-color: var(--vencido-color); }
-/* Stars */
 .star-empty, .star {
     font-size: 1.3rem;
     cursor: pointer;
@@ -777,7 +760,6 @@ tr:hover td {
 .star {
     color: var(--warning-color);
 }
-/* Responsive */
 @media(max-width: 1200px) {
     .content.two-col {
         grid-template-columns: 1fr;
@@ -866,7 +848,6 @@ tr:hover td {
         padding: 8px 4px;
     }
 }
-/* Scrollbar */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -882,7 +863,6 @@ tr:hover td {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary-color);
 }
-/* Smooth Animations */
 .card, .form-section, .chart-section, .table-section, button, input, select {
     will-change: transform;
 }
@@ -890,59 +870,6 @@ tr:hover td {
 </head>
 <body>
 <button class="theme-toggle-btn" onclick="toggleTheme()">☀️ Modo Claro</button>
-
-<!-- REMOVIDO O LOGIN OVERLAY -->
-
-<div class="modal-overlay" id="statisticsModal" style="display:none;">
-    <div class="modal-box">
-        <button class="modal-close" onclick="closeModal('statisticsModal')">X</button>
-        <h2>📊 Estatísticas do Mês Atual</h2>
-        <p style="text-align: center; color: var(--text-secondary-dark); margin-bottom: 20px;" id="statsCurrentMonth"></p>
-        <div class="stats-grid">
-            <div class="stat-item stat-entrada">
-                <div class="stat-item-label">Entradas (Realiz.)</div>
-                <div class="stat-item-value summary-value-receber" id="statsEntradas">R$ 0,00</div>
-            </div>
-            <div class="stat-item stat-saida">
-                <div class="stat-item-label">Saídas (Realiz.)</div>
-                <div class="stat-item-value summary-value-pagar" id="statsSaidas">R$ 0,00</div>
-            </div>
-            <div class="stat-item stat-saldo">
-                <div class="stat-item-label">Saldo Realizado</div>
-                <div class="stat-item-value summary-value-saldo" id="statsSaldo">R$ 0,00</div>
-            </div>
-            <div class="stat-item stat-ticket">
-                <div class="stat-item-label">Ticket Médio (Gastos)</div>
-                <div class="stat-item-value" id="statsTicketMedio">R$ 0,00</div>
-            </div>
-            <div class="stat-item stat-most-spent">
-                <div class="stat-item-label">Categoria Mais Gasta</div>
-                <div class="stat-item-value" id="statsCategoriaMaisGasta">-</div>
-            </div>
-            <div class="stat-item stat-records">
-                <div class="stat-item-label">Total de Registros</div>
-                <div class="stat-item-value" id="statsTotalRegistros">0</div>
-            </div>
-        </div>
-        <h3 style="margin-top: 30px; font-size: 1.2em; color: var(--header-color-dark);">Projeção (Pendentes)</h3>
-        <div class="stats-grid">
-            <div class="stat-item stat-entrada">
-                <div class="stat-item-label">Entradas (Pend.)</div>
-                <div class="stat-item-value summary-value-receber" id="statsEntradasPendentes">R$ 0,00</div>
-            </div>
-            <div class="stat-item stat-saida">
-                <div class="stat-item-label">Saídas (Pend.)</div>
-                <div class="stat-item-value summary-value-pagar" id="statsSaidasPendentes">R$ 0,00</div>
-            </div>
-            <div class="stat-item stat-saldo">
-                <div class="stat-item-label">Saldo Projetado</div>
-                <div class="stat-item-value summary-value-saldo" id="statsSaldoProjetado">R$ 0,00</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- MAIN CONTAINER: agora visível por padrão -->
 <div class="container" id="mainContainer">
 <header>
 <h1>💰 Controle Financeiro</h1>
@@ -975,8 +902,8 @@ tr:hover td {
     <div class="card card-saldo">
         <div class="card-label">Renda Líquida Disponível</div>
         <div class="card-value" id="rendaLiquidaDisponivel">R$ 0,00</div>
-        <div style="font-size: 0.8em; margin-top: 8px; color: var(--text-secondary-dark);">
-            (Total recebido − Total gasto)
+        <div style="font-size: 0.8em; margin-top: 8px; color: var(--text-secondary-dark);" id="periodoRendaLiquida">
+            (Recebido − Gasto)
         </div>
     </div>
 </div>
@@ -1177,7 +1104,7 @@ tr:hover td {
         <button class="btn-filter" id="btnFiltrarFav" style="width: 100%; margin-top: 23px;">⭐ Favoritos</button>
     </div>
     <div class="filter-item">
-        <button class="btn-danger" onclick="limparFiltros()" style="width: 100%; margin-top: 23px;">🧹 Limpar Filtros</button>
+        <button class="btn-filter btn-danger" onclick="limparFiltros()" style="width: 100%; margin-top: 23px;">🧹 Limpar Filtros</button>
     </div>
     <div class="filter-item">
         <button class="btn-primary" onclick="exportarExcel()" style="width: 100%; margin-top: 23px;">📥 Excel</button>
@@ -1242,18 +1169,64 @@ tr:hover td {
         <button class="btn-edit" onclick="focarFormulario('Receber')">💵 Receber</button>
         <button class="btn-danger" onclick="focarFormulario('Pagar')">💸 Pagar</button>
         <button class="btn-primary" onclick="toggleStatistics()">📊 Estatísticas</button>
-        <button class="btn-filter" onclick="alert('Atalhos:
-+ ou N: Focar Formulário
-F: Favoritos
-Em desenvolvimento...')">💡 Atalhos</button>
+        <button class="btn-filter" onclick="configurarPeriodoGlobal()">⚙️ Período Global</button>
+        <button class="btn-filter" onclick="alert('Atalhos:\n+ ou N: Focar Formulário\nF: Favoritos\nEm desenvolvimento...')">💡 Atalhos</button>
     </div>
     <button class="fab-btn" onclick="toggleQuickMenu()">+</button>
 </div>
-
+<div class="modal-overlay" id="statisticsModal" style="display:none;">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('statisticsModal')">X</button>
+        <h2>📊 Estatísticas</h2>
+        <p style="text-align: center; color: var(--text-secondary-dark); margin-bottom: 20px;" id="statsCurrentMonth"></p>
+        <div class="stats-grid">
+            <div class="stat-item stat-entrada">
+                <div class="stat-item-label">Entradas (Realiz.)</div>
+                <div class="stat-item-value summary-value-receber" id="statsEntradas">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-saida">
+                <div class="stat-item-label">Saídas (Realiz.)</div>
+                <div class="stat-item-value summary-value-pagar" id="statsSaidas">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-saldo">
+                <div class="stat-item-label">Saldo Realizado</div>
+                <div class="stat-item-value summary-value-saldo" id="statsSaldo">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-ticket">
+                <div class="stat-item-label">Ticket Médio (Gastos)</div>
+                <div class="stat-item-value" id="statsTicketMedio">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-most-spent">
+                <div class="stat-item-label">Categoria Mais Gasta</div>
+                <div class="stat-item-value" id="statsCategoriaMaisGasta">-</div>
+            </div>
+            <div class="stat-item stat-records">
+                <div class="stat-item-label">Total de Registros</div>
+                <div class="stat-item-value" id="statsTotalRegistros">0</div>
+            </div>
+        </div>
+        <h3 style="margin-top: 30px; font-size: 1.2em; color: var(--header-color-dark);">Projeção (Pendentes)</h3>
+        <div class="stats-grid">
+            <div class="stat-item stat-entrada">
+                <div class="stat-item-label">Entradas (Pend.)</div>
+                <div class="stat-item-value summary-value-receber" id="statsEntradasPendentes">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-saida">
+                <div class="stat-item-label">Saídas (Pend.)</div>
+                <div class="stat-item-value summary-value-pagar" id="statsSaidasPendentes">R$ 0,00</div>
+            </div>
+            <div class="stat-item stat-saldo">
+                <div class="stat-item-label">Saldo Projetado</div>
+                <div class="stat-item-value summary-value-saldo" id="statsSaldoProjetado">R$ 0,00</div>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
 let registros = [];
 let chart, chartDiario, chartMensal, chartFluxoCaixa, chartCompMensal;
 let mostraApenasFav = false;
+let usuarioAutenticado = true; // ✅ Acesso automático
 let currentTheme = localStorage.getItem('theme') || 'dark';
 let filtroStatusAtual = 'todos';
 let filtroCategoriaAtual = 'all';
@@ -1294,8 +1267,119 @@ function applyTheme() {
     if(chart) atualizarGraficos(registros); 
 }
 
-// REMOVIDO: login, verificação de senha, etc.
+// ✅ REMOVIDO: login
+// ✅ Acesso imediato ao sistema
+function verificarAutenticacao() {
+    document.getElementById("mainContainer").style.display = "block";
+    document.getElementById("fabContainer").style.display = "block";
+    carregarRegistros();
+}
 
+function configurarPeriodoGlobal() {
+    const modalHTML = `
+    <div class="modal-overlay" id="periodoGlobalModal" style="display:flex;">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal('periodoGlobalModal')">X</button>
+            <h2>⚙️ Configurar Período de Análise</h2>
+            <p style="text-align: center; color: var(--text-secondary-dark); margin-bottom: 20px;">
+                Defina o período que será usado para todos os cálculos do sistema
+            </p>
+            <div class="form-group">
+                <label>Modo de Período</label>
+                <select id="modoPeriodoGlobal" onchange="togglePeriodoGlobalInputs()">
+                    <option value="diaAtual">Dia Atual (Padrão)</option>
+                    <option value="customizado">Período Personalizado</option>
+                </select>
+            </div>
+            <div id="periodoCustomizadoInputs" style="display:none;">
+                <div class="form-group">
+                    <label>Data Início</label>
+                    <input type="date" id="globalDataInicio">
+                </div>
+                <div class="form-group">
+                    <label>Data Fim</label>
+                    <input type="date" id="globalDataFim">
+                </div>
+            </div>
+            <div style="background: var(--glow-color); padding: 15px; border-radius: 12px; margin-top: 15px; border: 2px solid var(--primary-color);">
+                <p style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px;">
+                    📊 Impacto da Configuração:
+                </p>
+                <ul style="font-size: 0.9em; color: var(--text-color-dark); line-height: 1.8;">
+                    <li><strong>Renda Líquida Disponível:</strong> Será calculada apenas com receitas e gastos deste período</li>
+                    <li><strong>Filtros:</strong> Aplicará automaticamente o período definido</li>
+                    <li><strong>Estatísticas:</strong> Usará este período como base</li>
+                </ul>
+            </div>
+            <button class="btn-primary" onclick="salvarPeriodoGlobal()" style="margin-top: 20px;">
+                💾 Salvar Configuração
+            </button>
+        </div>
+    </div>`;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = modalHTML;
+    document.body.appendChild(tempDiv.firstElementChild);
+    const modoSalvo = localStorage.getItem('modoPeriodoGlobal') || 'diaAtual';
+    document.getElementById('modoPeriodoGlobal').value = modoSalvo;
+    if (modoSalvo === 'customizado') {
+        document.getElementById('periodoCustomizadoInputs').style.display = 'block';
+        document.getElementById('globalDataInicio').value = localStorage.getItem('globalDataInicio') || '';
+        document.getElementById('globalDataFim').value = localStorage.getItem('globalDataFim') || '';
+    }
+}
+function togglePeriodoGlobalInputs() {
+    const modo = document.getElementById('modoPeriodoGlobal').value;
+    const inputs = document.getElementById('periodoCustomizadoInputs');
+    inputs.style.display = modo === 'customizado' ? 'block' : 'none';
+}
+function salvarPeriodoGlobal() {
+    const modo = document.getElementById('modoPeriodoGlobal').value;
+    localStorage.setItem('modoPeriodoGlobal', modo);
+    if (modo === 'customizado') {
+        const inicio = document.getElementById('globalDataInicio').value;
+        const fim = document.getElementById('globalDataFim').value;
+        if (!inicio || !fim) {
+            alert('❌ Por favor, preencha ambas as datas!');
+            return;
+        }
+        if (new Date(inicio) > new Date(fim)) {
+            alert('❌ A data de início deve ser anterior à data fim!');
+            return;
+        }
+        localStorage.setItem('globalDataInicio', inicio);
+        localStorage.setItem('globalDataFim', fim);
+    }
+    closeModal('periodoGlobalModal');
+    aplicarFiltros();
+    alert('✅ Período configurado com sucesso! Todos os cálculos foram atualizados.');
+}
+function getPeriodoGlobal() {
+    const modo = localStorage.getItem('modoPeriodoGlobal') || 'diaAtual';
+    if (modo === 'diaAtual') {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        return {
+            inicio: hoje,
+            fim: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59)
+        };
+    } else {
+        const inicio = localStorage.getItem('globalDataInicio');
+        const fim = localStorage.getItem('globalDataFim');
+        if (inicio && fim) {
+            return {
+                inicio: new Date(inicio + 'T00:00:00'),
+                fim: new Date(fim + 'T23:59:59')
+            };
+        } else {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            return {
+                inicio: hoje,
+                fim: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59)
+            };
+        }
+    }
+}
 function corrigirData(dataInput) {
   const data = new Date(dataInput + 'T12:00:00'); 
   const ano = data.getFullYear();
@@ -1331,8 +1415,9 @@ function atualizarCardsGlobais(dataList) {
     limiteSeteDias.setDate(hoje.getDate() + 7);
     const mesAtual = new Date().getMonth();
     const anoAtual = new Date().getFullYear();
-    let totalRecebidoGlobal = 0;
-    let totalGastoGlobal = 0;
+    const periodoGlobal = getPeriodoGlobal();
+    let totalRecebidoPeriodo = 0;
+    let totalGastoPeriodo = 0;
     dataList.forEach(r => {
         const dataRegistro = new Date(r.data + 'T12:00:00');
         const valor = parseFloat(r.valor);
@@ -1355,15 +1440,29 @@ function atualizarCardsGlobais(dataList) {
                 vencemSeteDias += valor;
             }
         }
-        if (r.tipo === "Receber" && (r.status === "Recebido" || r.status === "Pago")) {
-            totalRecebidoGlobal += valor;
-        }
-        if (r.tipo === "Pagar" && (r.status === "Pago" || r.status === "Recebido")) {
-            totalGastoGlobal += valor;
+        if (dataRegistro >= periodoGlobal.inicio && dataRegistro <= periodoGlobal.fim) {
+            if (r.tipo === "Receber" && (r.status === "Recebido" || r.status === "Pago")) {
+                totalRecebidoPeriodo += valor;
+            }
+            if (r.tipo === "Pagar" && r.status === "Pago") {
+                totalGastoPeriodo += valor;
+            }
         }
     });
-    const rendaLiquida = totalRecebidoGlobal - totalGastoGlobal;
+    const rendaLiquida = totalRecebidoPeriodo - totalGastoPeriodo;
     document.getElementById("rendaLiquidaDisponivel").innerText = formatarMoeda(rendaLiquida);
+    const modoPeriodo = localStorage.getItem('modoPeriodoGlobal') || 'diaAtual';
+    let descricaoPeriodo = '(Dia Atual)';
+    if (modoPeriodo === 'customizado') {
+        const inicio = localStorage.getItem('globalDataInicio');
+        const fim = localStorage.getItem('globalDataFim');
+        if (inicio && fim) {
+            const dataInicio = new Date(inicio);
+            const dataFim = new Date(fim);
+            descricaoPeriodo = `(${dataInicio.toLocaleDateString('pt-BR')} – ${dataFim.toLocaleDateString('pt-BR')})`;
+        }
+    }
+    document.getElementById("periodoRendaLiquida").innerText = `${descricaoPeriodo}`;
     let entradaRealizadaMes = dataList.filter(r =>
         r.tipo === "Receber" &&
         (r.status === "Recebido" || r.status === "Pago") &&
@@ -1372,7 +1471,7 @@ function atualizarCardsGlobais(dataList) {
     ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
     let saidaRealizadaMes = dataList.filter(r =>
         r.tipo === "Pagar" &&
-        (r.status === "Pago" || r.status === "Recebido") &&
+        r.status === "Pago" &&
         new Date(r.data + 'T12:00:00').getMonth() === mesAtual &&
         new Date(r.data + 'T12:00:00').getFullYear() === anoAtual
     ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
@@ -1392,7 +1491,7 @@ function atualizarCardsGlobais(dataList) {
         ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
         const saidaAnt = dataList.filter(r =>
             r.tipo === "Pagar" &&
-            (r.status === "Pago" || r.status === "Recebido") &&
+            r.status === "Pago" &&
             new Date(r.data + 'T12:00:00').getMonth() === mesAnterior &&
             new Date(r.data + 'T12:00:00').getFullYear() === anoAnterior
         ).reduce((sum, r) => sum + parseFloat(r.valor), 0);
@@ -1454,9 +1553,7 @@ function mostrarRegistros(lista){
       if (valA > valB) return ordenacaoAtual.direcao === 'asc' ? 1 : -1;
       return 0;
   });
-  if (lista === registros) {
-      atualizarCardsGlobais(registros);
-  }
+  atualizarCardsGlobais(registros);
   lista.forEach(r=>{
     const tr=document.createElement("tr");
     const tipoBadge=r.tipo==="Pagar"?"badge-pagar":"badge-receber";
@@ -1616,11 +1713,11 @@ function atualizarGraficos(dataList){
     const valor = parseFloat(r.valor);
     if (dataRegistro.getMonth() === new Date().getMonth() && dataRegistro.getFullYear() === new Date().getFullYear()) {
       if (r.tipo === "Receber" && (r.status === "Recebido" || r.status === "Pago")) receitaAtual += valor;
-      else if (r.tipo === "Pagar" && (r.status === "Pago" || r.status === "Recebido")) despesaAtual += valor;
+      else if (r.tipo === "Pagar" && r.status === "Pago") despesaAtual += valor;
     }
     if (dataRegistro.getMonth() === mesAnterior.getMonth() && dataRegistro.getFullYear() === mesAnterior.getFullYear()) {
       if (r.tipo === "Receber" && (r.status === "Recebido" || r.status === "Pago")) receitaAnterior += valor;
-      else if (r.tipo === "Pagar" && (r.status === "Pago" || r.status === "Recebido")) despesaAnterior += valor;
+      else if (r.tipo === "Pagar" && r.status === "Pago") despesaAnterior += valor;
     }
   });
   const ctxCompMensal = document.getElementById('graficoComparativoMensal').getContext('2d');
@@ -1975,10 +2072,8 @@ function aplicarFiltros() {
             }
         }
         if (dataInicioFiltro && dataFimFiltro) {
-            dataFiltroAtivo = true; 
+            dataFiltroAtivo = true;
         }
-        dataInicioStr = '';
-        dataFimStr = '';
     }
     if (dataInicioStr && dataFimStr) {
         dataInicioFiltro = new Date(corrigirData(dataInicioStr) + 'T00:00:00');
@@ -2182,30 +2277,6 @@ Digite o novo prazo (ex: 12):`, objetivoMeses);
         }
         atualizarCardObjetivo();
         alert(`✅ Objetivo atualizado: ${formatarMoeda(objetivoEconomia)} em ${objetivoMeses} meses.`);
-    } else {
-        const cat = prompt(`Digite a categoria para definir/editar a meta (ex: Alimentação):`);
-        if (!cat) return;
-        const valorAtual = metasPorCategoria[cat] || 0;
-        const novoValorStr = prompt(`Meta de Gastos MENSAL para ${cat}:
-Valor Atual: R$ ${valorAtual.toFixed(2)}
-Digite o novo valor (0 para remover):`, valorAtual);
-        if (novoValorStr !== null) {
-            const novoValor = parseFloat(novoValorStr.replace(',', '.'));
-            if (!isNaN(novoValor) && novoValor >= 0) {
-                if (novoValor === 0) {
-                    delete metasPorCategoria[cat];
-                    alert(`✅ Meta para ${cat} removida.`);
-                } else {
-                    metasPorCategoria[cat] = novoValor;
-                    alert(`✅ Meta para ${cat} definida em ${formatarMoeda(novoValor)}.`);
-                }
-                localStorage.setItem('metasPorCategoria', JSON.stringify(metasPorCategoria));
-                atualizarCardsGlobais(registros);
-                exibirMetaCategoria(document.getElementById("categoria").value);
-            } else {
-                alert('❌ Valor inválido!');
-            }
-        }
     }
 }
 function getGastosMesCategoria(categoria) {
@@ -2213,7 +2284,7 @@ function getGastosMesCategoria(categoria) {
     const anoAtual = new Date().getFullYear();
     return registros.filter(r => 
         r.tipo === "Pagar" && 
-        (r.status === "Pago" || r.status === "Recebido") &&
+        r.status === "Pago" &&
         r.categoria === categoria &&
         new Date(r.data + 'T12:00:00').getMonth() === mesAtual && 
         new Date(r.data + 'T12:00:00').getFullYear() === anoAtual
@@ -2251,7 +2322,7 @@ function exibirMetaCategoria(categoria) {
 function atualizarCategoryMetas(dataList) {
     const summaryDiv = document.getElementById("categoryMetasSummary");
     summaryDiv.innerHTML = '';
-    const gastosMesPorCategoria = dataList.filter(r => r.tipo === "Pagar" && (r.status === "Pago" || r.status === "Recebido"))
+    const gastosMesPorCategoria = dataList.filter(r => r.tipo === "Pagar" && r.status === "Pago")
         .reduce((acc, r) => {
             const dataRegistro = new Date(r.data + 'T12:00:00');
             const mesAtual = new Date().getMonth();
@@ -2486,26 +2557,26 @@ function exportarExcel(){
             r.data.includes(termo)
         );
     }
-  const ws_data=listaExportar.map(r=>[
-    r.fav?"★":"",
-    new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR'),
-    r.tipo,
-    r.descricao,
-    r.categoria || '-',
-    r.valor,
-    r.valorOriginal ? r.valorOriginal : '',
-    r.status,
-    r.conta || 'N/A', 
-    r.recorrente, 
-    r.parcelaTotal > 1 ? `${r.parcelaAtual}/${r.parcelaTotal}` : '', 
-    r.campo2||'',
-    r.campo3||''
-  ]);
-  ws_data.unshift(["Fav","Data","Tipo","Descrição","Categoria","Valor","Valor Original","Status","Conta","Recorrente","Parcelas","Campo2","Campo3"]);
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet(ws_data);
-  XLSX.utils.book_append_sheet(wb,ws,"Financeiro");
-  XLSX.writeFile(wb,"Controle_Financeiro_Moderno.xlsx");
+    const ws_data=listaExportar.map(r=>[
+        r.fav?"★":"",
+        new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR'),
+        r.tipo,
+        r.descricao,
+        r.categoria || '-',
+        r.valor,
+        r.valorOriginal ? r.valorOriginal : '',
+        r.status,
+        r.conta || 'N/A', 
+        r.recorrente, 
+        r.parcelaTotal > 1 ? `${r.parcelaAtual}/${r.parcelaTotal}` : '', 
+        r.campo2||'',
+        r.campo3||''
+    ]);
+    ws_data.unshift(["Fav","Data","Tipo","Descrição","Categoria","Valor","Valor Original","Status","Conta","Recorrente","Parcelas","Campo2","Campo3"]);
+    const wb=XLSX.utils.book_new();
+    const ws=XLSX.utils.aoa_to_sheet(ws_data);
+    XLSX.utils.book_append_sheet(wb,ws,"Financeiro");
+    XLSX.writeFile(wb,"Controle_Financeiro_Moderno.xlsx");
 }
 function editar(row){
   const r=registros.find(r=>r.row===row);
@@ -2560,7 +2631,7 @@ document.getElementById("descricao").addEventListener("input", function() {
     exibirMetaCategoria(document.getElementById("categoria").value);
 });
 document.getElementById("categoria").addEventListener("change", function() {
-    document.getElementById("categoriaSugerida").value = '';
+    document.getElementById("categoriaSugerida").value = ''; 
     document.getElementById("sugestaoEmoji").style.display = 'none';
     exibirMetaCategoria(this.value);
 });
@@ -2589,97 +2660,31 @@ function focarFormulario(tipo) {
     window.scrollTo({top: 0, behavior: 'smooth'});
 }
 function closeModal(id) {
-    document.getElementById(id).style.display = 'none';
+    const modal = document.getElementById(id);
+    if (modal && modal.parentNode) {
+        modal.parentNode.removeChild(modal);
+    }
 }
 function toggleStatistics() {
     const modal = document.getElementById('statisticsModal');
-    if (modal.style.display === 'flex') {
-        closeModal('statisticsModal');
-    } else {
-        updateMonthlyStatistics();
+    if (modal.style.display === 'none' || modal.style.display === '') {
         modal.style.display = 'flex';
-        toggleQuickMenu();
+    } else {
+        modal.style.display = 'none';
     }
 }
-function updateMonthlyStatistics() {
-    const hoje = new Date();
-    const mesAtual = hoje.getMonth();
-    const anoAtual = hoje.getFullYear();
-    const mesNome = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-    document.getElementById('statsCurrentMonth').innerText = mesNome.toUpperCase();
-    let entradaRealizada = 0;
-    let saidaRealizada = 0;
-    let entradaPendente = 0;
-    let saidaPendente = 0;
-    let totalGastos = 0;
-    let contagemGastos = 0;
-    let gastosPorCategoria = {};
-    let totalRegistros = 0;
-    registros.forEach(r => {
-        const dataRegistro = new Date(r.data + 'T12:00:00');
-        if (dataRegistro.getMonth() === mesAtual && dataRegistro.getFullYear() === anoAtual) {
-            totalRegistros++;
-            const valor = parseFloat(r.valor);
-            if (r.tipo === "Receber") {
-                if (r.status === "Recebido" || r.status === "Pago") {
-                    entradaRealizada += valor;
-                } else if (r.status === "Pendente") {
-                    entradaPendente += valor;
-                }
-            } else if (r.tipo === "Pagar") {
-                if (r.status === "Pago" || r.status === "Recebido") {
-                    saidaRealizada += valor;
-                    totalGastos += valor;
-                    contagemGastos++;
-                    gastosPorCategoria[r.categoria] = (gastosPorCategoria[r.categoria] || 0) + valor;
-                } else if (r.status === "Pendente") {
-                    saidaPendente += valor;
-                }
-            }
-        }
-    });
-    const saldoRealizado = entradaRealizada - saidaRealizada;
-    const saldoProjetado = (entradaRealizada + entradaPendente) - (saidaRealizada + saidaPendente);
-    const ticketMedio = contagemGastos > 0 ? totalGastos / contagemGastos : 0;
-    let categoriaMaisGasta = '-';
-    let maxGasto = 0;
-    for (const cat in gastosPorCategoria) {
-        if (gastosPorCategoria[cat] > maxGasto) {
-            maxGasto = gastosPorCategoria[cat];
-            categoriaMaisGasta = `${cat} (${formatarMoeda(maxGasto)})`;
-        }
-    }
-    document.getElementById('statsEntradas').innerText = formatarMoeda(entradaRealizada);
-    document.getElementById('statsSaidas').innerText = formatarMoeda(saidaRealizada);
-    document.getElementById('statsSaldo').innerText = formatarMoeda(saldoRealizado);
-    document.getElementById('statsTicketMedio').innerText = formatarMoeda(ticketMedio);
-    document.getElementById('statsCategoriaMaisGasta').innerText = categoriaMaisGasta;
-    document.getElementById('statsTotalRegistros').innerText = totalRegistros;
-    document.getElementById('statsEntradasPendentes').innerText = formatarMoeda(entradaPendente);
-    document.getElementById('statsSaidasPendentes').innerText = formatarMoeda(saidaPendente);
-    document.getElementById('statsSaldoProjetado').innerText = formatarMoeda(saldoProjetado);
-}
-document.addEventListener('keydown', (e) => {
-    // Atalhos funcionam diretamente, sem checagem de login
-    if (e.key === '+' || e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        document.getElementById("descricao").focus();
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-});
+
 document.getElementById("data").valueAsDate=new Date();
+verificarAutenticacao();
 applyTheme();
 toggleParcelaRecorrente();
 atualizarCardObjetivo();
 renderizarCalendario(registros, calendarioMesAtual);
 document.getElementById(`sort-${ordenacaoAtual.chave}`).textContent = ordenacaoAtual.direcao === 'asc' ? ' ▲' : ' ▼';
-
-// Carregar registros ao iniciar
-carregarRegistros();
-
-// Atualização automática a cada 10 segundos
 setInterval(() => {
-  carregarRegistros();
+  if(usuarioAutenticado) {
+    carregarRegistros();
+  }
 }, 10000);
 </script>
 </body>
